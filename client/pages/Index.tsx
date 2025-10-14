@@ -62,13 +62,7 @@ export default function Index() {
                   token={fromToken}
                   amount={fromAmount}
                   onAmountChange={setFromAmount}
-                  onTokenClick={() => {
-                    const idx =
-                      (TOKENS.findIndex((t) => t.symbol === fromToken.symbol) +
-                        1) %
-                      TOKENS.length;
-                    setFromToken(TOKENS[idx]);
-                  }}
+                  onTokenClick={() => setSelecting("from")}
                   balance={2.3456}
                 />
 
@@ -88,13 +82,7 @@ export default function Index() {
                   token={toToken}
                   amount={toAmount}
                   onAmountChange={setToAmount}
-                  onTokenClick={() => {
-                    const idx =
-                      (TOKENS.findIndex((t) => t.symbol === toToken.symbol) +
-                        1) %
-                      TOKENS.length;
-                    setToToken(TOKENS[idx]);
-                  }}
+                  onTokenClick={() => setSelecting("to")}
                 />
               </div>
 
@@ -160,6 +148,16 @@ export default function Index() {
           </aside>
         </div>
       </div>
+      {selecting && (
+        <TokenSelector
+          open={!!selecting}
+          onClose={() => setSelecting(null)}
+          onSelect={(t) => {
+            if (selecting === "from") setFromToken(t);
+            else setToToken(t);
+          }}
+        />
+      )}
     </div>
   );
 }
