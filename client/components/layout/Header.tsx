@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Settings2, Wallet2 } from "lucide-react";
+import ConnectButton from "@/components/wallet/ConnectButton";
 
 const NavItem = ({ to, label }: { to: string; label: string }) => (
   <NavLink
