@@ -1,6 +1,7 @@
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";
+import SlippagePortal from "@/components/shared/SlippageDialog";
 import { createRoot, type Root } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,9 +26,7 @@ const App = () => (
         <BrowserRouter>
           <Header />
           {/* Global slippage dialog portal */}
-          {/**/}
-          {/* @ts-ignore */}
-          {React.createElement(require("./components/shared/SlippageDialog").default)}
+          <SlippagePortal />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pool" element={<Pool />} />
