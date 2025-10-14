@@ -46,7 +46,7 @@ export function TokenInput({
           className="min-w-28 justify-between bg-card hover:bg-card/80 px-3"
         >
           <div className="flex items-center gap-2">
-            <div className="size-5 rounded-full bg-muted" />
+            <TokenLogo src={token.logo} alt={`${token.name} logo`} size={20} />
             <span className="font-semibold">{token.symbol}</span>
           </div>
           <ChevronDown className="opacity-70" />
