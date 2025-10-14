@@ -26,7 +26,11 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2">
-            <div className="size-8 rounded-md bg-gradient-to-br from-muted to-card border border-border/60" />
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets%2Fd70091a6f5494e0195b033a72f7e79ae%2Fee3a0a5652aa480f9aa42277503e94b2?format=webp&width=64"
+              alt="Silverback logo"
+              className="h-8 w-8 rounded-md object-contain"
+            />
             <span className="text-lg font-extrabold tracking-tight uppercase">Silverback</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
