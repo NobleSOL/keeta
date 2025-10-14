@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import TokenLogo from "@/components/shared/TokenLogo";
 
 export type Token = {
   symbol: string;
