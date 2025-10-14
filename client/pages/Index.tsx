@@ -55,6 +55,8 @@ export default function Index() {
   const [quoteOut, setQuoteOut] = useState<null | { wei: bigint; formatted: string }>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
+  const [toBalance, setToBalance] = useState<number | undefined>(undefined);
 
   function resolveMeta(t: Token): { address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"; decimals: number } | null {
     if (t.symbol.toUpperCase() === "ETH") return { address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", decimals: 18 };
