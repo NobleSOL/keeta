@@ -5,11 +5,11 @@ import { ArrowDownUp, Info } from "lucide-react";
 import TokenLogo from "@/components/shared/TokenLogo";
 import { tokenBySymbol } from "@/lib/tokens";
 
-const TOKENS: Token[] = ["ETH", "USDC", "SIV", "WBTC"].map((sym) => tokenBySymbol(sym));
+const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => tokenBySymbol(sym));
 
 export default function Index() {
-  const [fromToken, setFromToken] = useState<Token>(TOKENS[0]);
-  const [toToken, setToToken] = useState<Token>(TOKENS[2]);
+  const [fromToken, setFromToken] = useState<Token>(tokenBySymbol("ETH"));
+  const [toToken, setToToken] = useState<Token>(tokenBySymbol("SBCK"));
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
 
@@ -92,7 +92,7 @@ export default function Index() {
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Trending on Base</h2>
               <ul className="space-y-3">
-                {["ETH", "USDC", "AERO", "DEGEN", "SIV"].map((s) => tokenBySymbol(s)).map((t) => (
+                {["ETH", "USDC", "KTA", "AERO", "SBCK"].map((s) => tokenBySymbol(s)).map((t) => (
                   <li key={t.symbol} className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
                     <div className="flex items-center gap-2">
                       <TokenLogo src={t.logo} alt={`${t.name} logo`} size={20} />
