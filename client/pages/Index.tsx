@@ -195,7 +195,13 @@ export default function Index() {
             <div className="rounded-2xl border border-border/60 bg-card/60 p-6 shadow-2xl shadow-black/30 backdrop-blur">
               <div className="mb-4 flex items-center justify-between">
                 <h1 className="text-xl font-semibold">Swap</h1>
-                <div className="text-xs text-muted-foreground">on Base</div>
+                <button
+                  type="button"
+                  className="text-xs text-sky-400 hover:underline"
+                  onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+                >
+                  Slippage {slippage}%
+                </button>
               </div>
               <div className="space-y-3">
                 <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
