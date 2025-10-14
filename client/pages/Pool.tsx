@@ -169,20 +169,6 @@ export default function Pool() {
             />
           </div>
 
-          <div className="mt-4 rounded-xl border border-border/60 bg-secondary/60 p-4 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Slippage</span>
-              <SlippageSettings
-                value={slippage}
-                onChange={(v) => {
-                  setSlippage(v);
-                  if (typeof window !== "undefined")
-                    localStorage.setItem("slippagePct", String(v));
-                }}
-              />
-            </div>
-          </div>
-
           <Button
             className="mt-4 h-12 w-full bg-brand text-white hover:bg-brand/90"
             disabled={cta.disabled}
