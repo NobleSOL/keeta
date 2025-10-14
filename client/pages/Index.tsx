@@ -6,7 +6,7 @@ import { ArrowDownUp, Info } from "lucide-react";
 const TOKENS: Token[] = [
   { symbol: "ETH", name: "Ether" },
   { symbol: "USDC", name: "USD Coin" },
-  { symbol: "SIV", name: "Siverback" },
+  { symbol: "SIV", name: "Silverback" },
   { symbol: "WBTC", name: "Wrapped BTC" },
 ];
 
