@@ -122,6 +122,20 @@ export default function Pool() {
         <div className="mx-auto max-w-3xl rounded-2xl border border-border/60 bg-card/60 p-6 shadow-2xl shadow-black/30 backdrop-blur">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <div className="inline-flex rounded-md bg-secondary/60 p-1 text-xs">
+                <button
+                  className={`px-2 py-1 rounded ${version === "v2" ? "bg-brand text-white" : ""}`}
+                  onClick={() => setVersion("v2")}
+                >
+                  V2
+                </button>
+                <button
+                  className={`px-2 py-1 rounded ${version === "v3" ? "bg-brand text-white" : ""}`}
+                  onClick={() => setVersion("v3")}
+                >
+                  V3
+                </button>
+              </div>
               <button
                 onClick={() => setMode("add")}
                 className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "add" ? "bg-brand text-white" : "bg-secondary/60"}`}
@@ -134,16 +148,33 @@ export default function Pool() {
               >
                 Remove
               </button>
+              {version === "v3" && (
+                <div className="ml-2 flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Fee tier</span>
+                  <input
+                    value={feeTier}
+                    onChange={(e) => setFeeTier(Number(e.target.value.replace(/[^0-9]/g, "")))}
+                    className="h-7 w-20 rounded-md border border-border/60 bg-secondary/60 px-2 text-right"
+                  />
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              className="text-xs text-sky-400 hover:underline"
-              onClick={() =>
-                document.dispatchEvent(new Event("sb:open-slippage"))
-              }
-            >
-              Slippage {slippage}%
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="rounded-md bg-secondary/60 px-3 py-1 text-xs"
+                onClick={handleCreatePool}
+              >
+                {version === "v2" ? "Create V2 Pair" : "Create V3 Pool"}
+              </button>
+              <button
+                type="button"
+                className="text-xs text-sky-400 hover:underline"
+                onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+              >
+                Slippage {slippage}%
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
