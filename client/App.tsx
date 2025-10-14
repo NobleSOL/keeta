@@ -24,6 +24,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Header />
+          {/* Global slippage dialog portal */}
+          {/**/}
+          {/* @ts-ignore */}
+          {React.createElement(require("./components/shared/SlippageDialog").default)}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/pool" element={<Pool />} />
