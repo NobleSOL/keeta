@@ -92,11 +92,11 @@ export default function Index() {
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Trending on Base</h2>
               <ul className="space-y-3">
-                {["ETH", "USDC", "AERO", "DEGEN", "SIV"].map((t) => (
-                  <li key={t} className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
+                {["ETH", "USDC", "AERO", "DEGEN", "SIV"].map((s) => tokenBySymbol(s)).map((t) => (
+                  <li key={t.symbol} className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <div className="size-5 rounded-full bg-muted" />
-                      <span className="font-medium">{t}</span>
+                      <TokenLogo src={t.logo} alt={`${t.name} logo`} size={20} />
+                      <span className="font-medium">{t.symbol}</span>
                     </div>
                     <span className="text-xs text-emerald-400">+{(Math.random() * 8 + 1).toFixed(1)}%</span>
                   </li>
