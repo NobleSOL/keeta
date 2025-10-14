@@ -26,8 +26,8 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2">
-            <div className="size-8 rounded-md bg-brand" />
-            <span className="text-lg font-extrabold tracking-tight">Siverback</span>
+            <div className="size-8 rounded-md bg-gradient-to-br from-muted to-card border border-border/60" />
+            <span className="text-lg font-extrabold tracking-tight uppercase">Silverback</span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             <NavItem to="/" label="Swap" />
@@ -44,7 +44,7 @@ export function Header() {
           <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings2 />
           </Button>
-          <Button className="bg-brand hover:bg-brand/90">
+          <Button>
             <Wallet2 />
             Connect Wallet
           </Button>

@@ -1,5 +1,5 @@
 /** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -12,97 +12,97 @@
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
-    /* Siverback brand - default to dark UI */
-    --background: 220 15% 7%;
-    --foreground: 210 40% 98%;
+    /* Silverback grayscale, minimal accent */
+    --background: 220 14% 6%;
+    --foreground: 210 20% 96%;
 
-    --card: 220 13% 12%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 12% 10%;
+    --card-foreground: 210 20% 96%;
 
-    --popover: 220 13% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 12% 8%;
+    --popover-foreground: 210 20% 96%;
 
-    /* Primary: vivid teal/emerald accent */
-    --primary: 162 84% 45%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary buttons are light on dark */
+    --primary: 0 0% 100%;
+    --primary-foreground: 222 47% 11%;
 
-    /* Secondary: subtle elevated surface */
-    --secondary: 220 13% 16%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary/elevated surface */
+    --secondary: 220 12% 14%;
+    --secondary-foreground: 210 20% 96%;
 
-    --muted: 220 10% 20%;
-    --muted-foreground: 215 20% 72%;
+    --muted: 220 8% 22%;
+    --muted-foreground: 215 12% 72%;
 
-    --accent: 200 80% 52%;
-    --accent-foreground: 210 40% 98%;
+    /* Subtle blue-tinted accent for pills if needed */
+    --accent: 220 12% 20%;
+    --accent-foreground: 210 20% 96%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 10% 24%;
-    --input: 220 10% 24%;
-    --ring: 162 84% 45%;
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --ring: 0 0% 100%;
 
     --radius: 0.75rem;
 
-    /* Sidebar tokens aligned to brand */
-    --sidebar-background: 220 15% 8%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 162 84% 45%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 220 13% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 10% 24%;
-    --sidebar-ring: 162 84% 45%;
+    /* Sidebar tokens */
+    --sidebar-background: 220 14% 6.5%;
+    --sidebar-foreground: 210 20% 96%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 220 12% 14%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 220 10% 22%;
+    --sidebar-ring: 0 0% 100%;
 
-    /* Additional brand helpers */
-    --brand: 162 84% 45%;
-    --brand-foreground: 210 40% 98%;
-    --brand-emphasis: 160 90% 40%;
+    /* Optional brand helpers */
+    --brand: 0 0% 100%;
+    --brand-foreground: 222 47% 11%;
+    --brand-emphasis: 220 12% 26%;
   }
 
   .dark {
-    /* Keep dark scheme identical to root for consistency */
-    --background: 220 15% 7%;
-    --foreground: 210 40% 98%;
+    --background: 220 14% 6%;
+    --foreground: 210 20% 96%;
 
-    --card: 220 13% 12%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 12% 10%;
+    --card-foreground: 210 20% 96%;
 
-    --popover: 220 13% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 12% 8%;
+    --popover-foreground: 210 20% 96%;
 
-    --primary: 162 84% 45%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 220 13% 16%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 12% 14%;
+    --secondary-foreground: 210 20% 96%;
 
-    --muted: 220 10% 20%;
-    --muted-foreground: 215 20% 72%;
+    --muted: 220 8% 22%;
+    --muted-foreground: 215 12% 72%;
 
-    --accent: 200 80% 52%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 12% 20%;
+    --accent-foreground: 210 20% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 10% 24%;
-    --input: 220 10% 24%;
-    --ring: 162 84% 45%;
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --ring: 0 0% 100%;
 
-    --sidebar-background: 220 15% 8%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 162 84% 45%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 220 13% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 10% 24%;
-    --sidebar-ring: 162 84% 45%;
+    --sidebar-background: 220 14% 6.5%;
+    --sidebar-foreground: 210 20% 96%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 220 12% 14%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 220 10% 22%;
+    --sidebar-ring: 0 0% 100%;
 
-    --brand: 162 84% 45%;
-    --brand-foreground: 210 40% 98%;
-    --brand-emphasis: 160 90% 40%;
+    --brand: 0 0% 100%;
+    --brand-foreground: 222 47% 11%;
+    --brand-emphasis: 220 12% 26%;
   }
 }
 

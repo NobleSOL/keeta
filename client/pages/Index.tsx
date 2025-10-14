@@ -29,7 +29,7 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(ellipse_at_top_left,rgba(0,227,140,0.15)_0%,rgba(0,0,0,0)_40%),radial-gradient(ellipse_at_bottom_right,rgba(76,158,255,0.15)_0%,rgba(0,0,0,0)_45%)]">
+    <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-5">
           <section className="order-2 md:order-1 md:col-span-3">
