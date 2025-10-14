@@ -1,7 +1,14 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Settings2, Wallet2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NavItem = ({ to, label }: { to: string; label: string }) => (
   <NavLink
@@ -21,6 +28,7 @@ const NavItem = ({ to, label }: { to: string; label: string }) => (
 
 export function Header() {
   const location = useLocation();
+  const [network, setNetwork] = useState<"Base" | "Keeta">("Base");
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -42,11 +50,24 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" className="hidden sm:inline-flex gap-2">
-            <div className="size-2 rounded-full bg-sky-400 animate-pulse" />
-            <span className="font-semibold">Base</span>
-            <ChevronDown className="opacity-70" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" className="hidden sm:inline-flex gap-2">
+                <div
+                  className={cn(
+                    "size-2 rounded-full animate-pulse",
+                    network === "Base" ? "bg-sky-400" : "bg-purple-400",
+                  )}
+                />
+                <span className="font-semibold">{network}</span>
+                <ChevronDown className="opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setNetwork("Base")}>Base</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setNetwork("Keeta")}>Keeta</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings2 />
           </Button>
