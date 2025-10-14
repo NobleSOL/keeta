@@ -102,6 +102,56 @@ export default function Index() {
     };
   }, [canSwap, fromAmount, fromToken, toToken, remoteTokens, publicClient]);
 
+  // Reflect quoted output into the receive input
+  useEffect(() => {
+    if (quoteOut) setToAmount(quoteOut.formatted);
+    else setToAmount("");
+  }, [quoteOut]);
+
+  // Fetch balances for selected tokens
+  useEffect(() => {
+    let cancel = false;
+    async function getBalanceForToken(t: Token): Promise<number | undefined> {
+      if (!publicClient || !address) return undefined;
+      if (t.symbol.toUpperCase() === "ETH") {
+        const bal = await publicClient.getBalance({ address });
+        return Number(formatUnits(bal, 18));
+      }
+      const meta = resolveMeta(t);
+      if (!meta?.address) return undefined;
+      const bal = (await publicClient.readContract({
+        address: meta.address as any,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [address],
+      })) as bigint;
+      return Number(formatUnits(bal, meta.decimals ?? 18));
+    }
+    async function run() {
+      setFromBalance(undefined);
+      setToBalance(undefined);
+      if (!isConnected || !address) return;
+      try {
+        const [fb, tb] = await Promise.all([
+          getBalanceForToken(fromToken),
+          getBalanceForToken(toToken),
+        ]);
+        if (cancel) return;
+        setFromBalance(fb);
+        setToBalance(tb);
+      } catch {
+        if (!cancel) {
+          setFromBalance(undefined);
+          setToBalance(undefined);
+        }
+      }
+    }
+    run();
+    return () => {
+      cancel = true;
+    };
+  }, [isConnected, address, fromToken, toToken, publicClient, remoteTokens]);
+
   const handleFlip = () => {
     setFromToken(toToken);
     setToToken(fromToken);
@@ -126,7 +176,7 @@ export default function Index() {
                   amount={fromAmount}
                   onAmountChange={setFromAmount}
                   onTokenClick={() => setSelecting("from")}
-                  balance={2.3456}
+                  balance={fromBalance}
                 />
 
                 <div className="flex items-center justify-center py-1">
@@ -146,6 +196,8 @@ export default function Index() {
                   amount={toAmount}
                   onAmountChange={setToAmount}
                   onTokenClick={() => setSelecting("to")}
+                  balance={toBalance}
+                  disabled
                 />
               </div>
 
