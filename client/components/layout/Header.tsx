@@ -57,24 +57,49 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" className="hidden sm:inline-flex gap-2">
-                <div
-                  className={cn(
-                    "size-2 rounded-full animate-pulse",
-                    network === "Base" ? "bg-sky-400" : "bg-purple-400",
-                  )}
-                />
-                <span className="font-semibold">{network}</span>
-                <ChevronDown className="opacity-70" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setNetwork("Base")}>Base</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setNetwork("Keeta")}>Keeta</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="relative" ref={menuRef}>
+            <Button
+              variant="secondary"
+              className="hidden sm:inline-flex gap-2"
+              onClick={() => setOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={open}
+            >
+              <div
+                className={cn(
+                  "size-2 rounded-full animate-pulse",
+                  network === "Base" ? "bg-sky-400" : "bg-purple-400",
+                )}
+              />
+              <span className="font-semibold">{network}</span>
+              <ChevronDown className="opacity-70" />
+            </Button>
+            {open && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-36 overflow-hidden rounded-md border border-border/60 bg-popover p-1 text-popover-foreground shadow-md z-50"
+              >
+                <button
+                  className="block w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-accent"
+                  onClick={() => {
+                    setNetwork("Base");
+                    setOpen(false);
+                  }}
+                >
+                  Base
+                </button>
+                <button
+                  className="block w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-accent"
+                  onClick={() => {
+                    setNetwork("Keeta");
+                    setOpen(false);
+                  }}
+                >
+                  Keeta
+                </button>
+              </div>
+            )}
+          </div>
           <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings2 />
           </Button>
