@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Info } from "lucide-react";
 import TokenLogo from "@/components/shared/TokenLogo";
 import { tokenBySymbol } from "@/lib/tokens";
+import { useAccount, useConnect } from "wagmi";
 
 const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) =>
   tokenBySymbol(sym),
@@ -19,6 +20,20 @@ export default function Index() {
     const a = Number(fromAmount);
     return Number.isFinite(a) && a > 0 && fromToken.symbol !== toToken.symbol;
   }, [fromAmount, fromToken.symbol, toToken.symbol]);
+
+  const { isConnected } = useAccount();
+  const { connectors, connect } = useConnect();
+
+  const connectPreferred = () => {
+    const preferred = connectors.find((c) => c.id === "injected") ?? connectors[0];
+    if (preferred) connect({ connector: preferred });
+  };
+
+  const cta = (() => {
+    if (!isConnected) return { label: "Connect Wallet", disabled: false } as const;
+    if (canSwap) return { label: "Swap", disabled: false } as const;
+    return { label: "Enter an amount", disabled: true } as const;
+  })();
 
   const handleFlip = () => {
     setFromToken(toToken);
@@ -93,10 +108,13 @@ export default function Index() {
               </div>
 
               <Button
-                className="mt-4 h-12 w-full bg-brand text-brand-foreground hover:bg-brand/90"
-                disabled={!canSwap}
+                className="mt-4 h-12 w-full bg-brand text-white hover:bg-brand/90"
+                disabled={cta.disabled}
+                onClick={() => {
+                  if (!isConnected) connectPreferred();
+                }}
               >
-                {canSwap ? "Swap" : "Enter an amount"}
+                {cta.label}
               </Button>
 
               <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
