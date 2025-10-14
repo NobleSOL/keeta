@@ -28,27 +28,39 @@ export default function TokenSelector({
 
   const { data: remoteTokens } = useTokenList();
   const knownTokens: Token[] = useMemo(() => {
-    const base: Token[] = Object.values(TOKEN_META).map((m) => ({ ...m }));
-    const rem: Token[] = (remoteTokens || []).map((t) => ({
-      symbol: t.symbol,
+    const local: Token[] = Object.values(TOKEN_META).map((m) => ({ ...m }));
+    const remote: Token[] = (remoteTokens || []).map((t) => ({
+      symbol: t.symbol?.toUpperCase(),
       name: t.name,
       address: t.address,
       decimals: t.decimals,
       logo: t.logoURI,
     }));
-    const byAddr = new Map<string, Token>();
-    const bySym = new Map<string, Token>();
-    [...base, ...rem].forEach((t) => {
-      const keyA = (t.address || "").toLowerCase();
-      const keyS = t.symbol.toUpperCase();
-      if (keyA && !byAddr.has(keyA)) byAddr.set(keyA, t);
-      if (!bySym.has(keyS)) bySym.set(keyS, t);
+
+    // Prefer remote entries (with address) over local by symbol
+    const bySymbol = new Map<string, Token>();
+    remote.forEach((t) => {
+      if (!t?.symbol) return;
+      bySymbol.set(t.symbol.toUpperCase(), t);
     });
-    // Prefer address uniqueness first, then symbols
-    const merged = new Map<string, Token>();
-    byAddr.forEach((t) => merged.set((t.address || t.symbol).toLowerCase(), t));
-    bySym.forEach((t) => merged.set((t.address || t.symbol).toLowerCase(), t));
-    return Array.from(merged.values());
+    local.forEach((t) => {
+      const key = t.symbol.toUpperCase();
+      if (!bySymbol.has(key)) bySymbol.set(key, t);
+    });
+
+    // Also ensure no duplicate addresses
+    const seenAddr = new Set<string>();
+    const merged: Token[] = [];
+    for (const t of bySymbol.values()) {
+      const addr = (t.address || "").toLowerCase();
+      if (addr) {
+        if (seenAddr.has(addr)) continue;
+        seenAddr.add(addr);
+      }
+      merged.push(t);
+    }
+
+    return merged.sort((a, b) => a.symbol.localeCompare(b.symbol));
   }, [remoteTokens]);
 
   const filtered = useMemo(() => {
@@ -169,7 +181,7 @@ export default function TokenSelector({
         <div className="max-h-72 overflow-y-auto rounded-lg border border-border/60">
           {filtered.map((t) => (
             <button
-              key={t.symbol}
+              key={(t.address ? `addr-${t.address.toLowerCase()}` : `sym-${t.symbol.toUpperCase()}`)}
               onClick={() => {
                 onSelect(t);
                 onClose();
