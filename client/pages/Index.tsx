@@ -198,6 +198,10 @@ export default function Index() {
                 <div className="text-xs text-muted-foreground">on Base</div>
               </div>
               <div className="space-y-3">
+                <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Select a share of your balance</span>
+                  <QuickFill balance={fromBalance} onSelect={setFromAmount} />
+                </div>
                 <TokenInput
                   label="You pay"
                   token={fromToken}
