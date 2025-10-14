@@ -6,8 +6,12 @@ export type DexscreenerTokenStats = {
   change24h: number | null;
 };
 
-async function fetchDexscreenerTokens(addresses: string[]): Promise<Record<string, DexscreenerTokenStats>> {
-  const addrs = Array.from(new Set(addresses.filter(Boolean))).map((a) => a.toLowerCase());
+async function fetchDexscreenerTokens(
+  addresses: string[],
+): Promise<Record<string, DexscreenerTokenStats>> {
+  const addrs = Array.from(new Set(addresses.filter(Boolean))).map((a) =>
+    a.toLowerCase(),
+  );
   if (addrs.length === 0) return {};
   const url = `https://api.dexscreener.com/latest/dex/tokens/${addrs.join(",")}`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
@@ -16,7 +20,9 @@ async function fetchDexscreenerTokens(addresses: string[]): Promise<Record<strin
   const pairs: any[] = json?.pairs || [];
   const bestByAddr: Record<string, any> = {};
   for (const p of pairs) {
-    const tokenAddrs = [p.baseToken?.address, p.quoteToken?.address].filter(Boolean).map((a: string) => a.toLowerCase());
+    const tokenAddrs = [p.baseToken?.address, p.quoteToken?.address]
+      .filter(Boolean)
+      .map((a: string) => a.toLowerCase());
     const liq = Number(p.liquidity?.usd ?? 0);
     for (const a of tokenAddrs) {
       const prev = bestByAddr[a];
@@ -30,15 +36,25 @@ async function fetchDexscreenerTokens(addresses: string[]): Promise<Record<strin
       out[a] = { address: a as `0x${string}`, priceUsd: null, change24h: null };
       continue;
     }
-    const priceUsd = p.priceUsd != null ? Number(p.priceUsd) : (p.priceNative != null ? Number(p.priceNative) : null);
-    const change24h = p.priceChange?.h24 != null ? Number(p.priceChange.h24) : null;
+    const priceUsd =
+      p.priceUsd != null
+        ? Number(p.priceUsd)
+        : p.priceNative != null
+          ? Number(p.priceNative)
+          : null;
+    const change24h =
+      p.priceChange?.h24 != null ? Number(p.priceChange.h24) : null;
     out[a] = { address: a as `0x${string}`, priceUsd, change24h };
   }
   return out;
 }
 
 export function useDexscreenerTokenStats(addresses: string[]) {
-  const key = ["dexscreener", "tokens", ...addresses.map((a) => a?.toLowerCase()).sort()];
+  const key = [
+    "dexscreener",
+    "tokens",
+    ...addresses.map((a) => a?.toLowerCase()).sort(),
+  ];
   return useQuery({
     queryKey: key,
     queryFn: () => fetchDexscreenerTokens(addresses),
