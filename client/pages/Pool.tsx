@@ -12,6 +12,8 @@ import { v3Address, nfpmAbi } from "@/amm/v3";
 
 export default function Pool() {
   const [mode, setMode] = useState<"add" | "remove">("add");
+  const [version, setVersion] = useState<"v2" | "v3">("v2");
+  const [feeTier, setFeeTier] = useState<number>(3000);
   const [tokenA, setTokenA] = useState<Token>({ ...tokenBySymbol("ETH") });
   const [tokenB, setTokenB] = useState<Token>({ ...tokenBySymbol("USDC") });
   const [amtA, setAmtA] = useState("");
