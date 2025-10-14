@@ -7,9 +7,9 @@ import TokenLogo from "@/components/shared/TokenLogo";
 import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect } from "wagmi";
 
-const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) =>
-  tokenBySymbol(sym),
-);
+const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => ({
+  ...tokenBySymbol(sym),
+}));
 
 export default function Index() {
   const [fromToken, setFromToken] = useState<Token>(tokenBySymbol("ETH"));
