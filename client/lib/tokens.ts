@@ -14,7 +14,7 @@ export const TOKEN_META: Record<string, TokenMeta> = {
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
-    logo: "https://assets.coingecko.com/coins/images/6319/standard/USD_Coin_icon.png",
+    logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_usdc.webp?i=kds",
   },
   WBTC: {
     symbol: "WBTC",
@@ -24,7 +24,7 @@ export const TOKEN_META: Record<string, TokenMeta> = {
   AERO: {
     symbol: "AERO",
     name: "Aerodrome",
-    logo: "https://assets.coingecko.com/coins/images/31955/standard/aero.png",
+    logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_aero.webp?i=kds",
   },
   DEGEN: {
     symbol: "DEGEN",
