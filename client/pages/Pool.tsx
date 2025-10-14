@@ -4,7 +4,12 @@ import TokenSelector from "@/components/swap/TokenSelector";
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp } from "lucide-react";
 import { tokenBySymbol } from "@/lib/tokens";
-import { useAccount, useConnect, usePublicClient, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useConnect,
+  usePublicClient,
+  useWriteContract,
+} from "wagmi";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
 import { v2Addresses, v2Abi } from "@/amm/v2";
@@ -116,7 +121,8 @@ export default function Pool() {
     if (!isConnected) return connectPreferred();
     if (version === "v2") {
       const addrs = v2Addresses();
-      if (!addrs) return alert("Set VITE_SB_V2_FACTORY and VITE_SB_V2_ROUTER envs");
+      if (!addrs)
+        return alert("Set VITE_SB_V2_FACTORY and VITE_SB_V2_ROUTER envs");
       await writeContractAsync({
         address: addrs.factory,
         abi: v2Abi.factory,
@@ -131,7 +137,12 @@ export default function Pool() {
         address: nfpm,
         abi: nfpmAbi,
         functionName: "createAndInitializePoolIfNecessary",
-        args: [tokenA.address as any, tokenB.address as any, feeTier as any, SQRT_PRICE_1_1],
+        args: [
+          tokenA.address as any,
+          tokenB.address as any,
+          feeTier as any,
+          SQRT_PRICE_1_1,
+        ],
         value: 0n,
       });
     }
@@ -181,7 +192,9 @@ export default function Pool() {
                   <span className="text-muted-foreground">Fee tier</span>
                   <input
                     value={feeTier}
-                    onChange={(e) => setFeeTier(Number(e.target.value.replace(/[^0-9]/g, "")))}
+                    onChange={(e) =>
+                      setFeeTier(Number(e.target.value.replace(/[^0-9]/g, "")))
+                    }
                     className="h-7 w-20 rounded-md border border-border/60 bg-secondary/60 px-2 text-right"
                   />
                 </div>
@@ -198,7 +211,9 @@ export default function Pool() {
               <button
                 type="button"
                 className="text-xs text-sky-400 hover:underline"
-                onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+                onClick={() =>
+                  document.dispatchEvent(new Event("sb:open-slippage"))
+                }
               >
                 Slippage {slippage}%
               </button>
