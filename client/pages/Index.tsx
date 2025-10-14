@@ -5,7 +5,9 @@ import { ArrowDownUp, Info } from "lucide-react";
 import TokenLogo from "@/components/shared/TokenLogo";
 import { tokenBySymbol } from "@/lib/tokens";
 
-const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => tokenBySymbol(sym));
+const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) =>
+  tokenBySymbol(sym),
+);
 
 export default function Index() {
   const [fromToken, setFromToken] = useState<Token>(tokenBySymbol("ETH"));
@@ -42,14 +44,22 @@ export default function Index() {
                   amount={fromAmount}
                   onAmountChange={setFromAmount}
                   onTokenClick={() => {
-                    const idx = (TOKENS.findIndex((t) => t.symbol === fromToken.symbol) + 1) % TOKENS.length;
+                    const idx =
+                      (TOKENS.findIndex((t) => t.symbol === fromToken.symbol) +
+                        1) %
+                      TOKENS.length;
                     setFromToken(TOKENS[idx]);
                   }}
                   balance={2.3456}
                 />
 
                 <div className="flex items-center justify-center py-1">
-                  <Button variant="secondary" size="icon" onClick={handleFlip} aria-label="Switch tokens">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleFlip}
+                    aria-label="Switch tokens"
+                  >
                     <ArrowDownUp />
                   </Button>
                 </div>
@@ -60,7 +70,10 @@ export default function Index() {
                   amount={toAmount}
                   onAmountChange={setToAmount}
                   onTokenClick={() => {
-                    const idx = (TOKENS.findIndex((t) => t.symbol === toToken.symbol) + 1) % TOKENS.length;
+                    const idx =
+                      (TOKENS.findIndex((t) => t.symbol === toToken.symbol) +
+                        1) %
+                      TOKENS.length;
                     setToToken(TOKENS[idx]);
                   }}
                 />
@@ -69,7 +82,9 @@ export default function Index() {
               <div className="mt-4 rounded-xl border border-border/60 bg-secondary/60 p-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Price</span>
-                  <span>1 {fromToken.symbol} ≈ 2000 {toToken.symbol}</span>
+                  <span>
+                    1 {fromToken.symbol} ≈ 2000 {toToken.symbol}
+                  </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-muted-foreground">Slippage</span>
@@ -77,30 +92,47 @@ export default function Index() {
                 </div>
               </div>
 
-              <Button className="mt-4 h-12 w-full bg-brand text-brand-foreground hover:bg-brand/90" disabled={!canSwap}>
+              <Button
+                className="mt-4 h-12 w-full bg-brand text-brand-foreground hover:bg-brand/90"
+                disabled={!canSwap}
+              >
                 {canSwap ? "Swap" : "Enter an amount"}
               </Button>
 
               <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                 <Info className="size-4" />
-                Quotes are simulated for demo. Plug your DEX logic and wallet to enable real swaps.
+                Quotes are simulated for demo. Plug your DEX logic and wallet to
+                enable real swaps.
               </p>
             </div>
           </section>
 
           <aside className="order-1 md:order-2 md:col-span-2">
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Trending on Base</h2>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                Trending on Base
+              </h2>
               <ul className="space-y-3">
-                {["ETH", "USDC", "KTA", "AERO", "SBCK"].map((s) => tokenBySymbol(s)).map((t) => (
-                  <li key={t.symbol} className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <TokenLogo src={t.logo} alt={`${t.name} logo`} size={20} />
-                      <span className="font-medium">{t.symbol}</span>
-                    </div>
-                    <span className="text-xs text-emerald-400">+{(Math.random() * 8 + 1).toFixed(1)}%</span>
-                  </li>
-                ))}
+                {["ETH", "USDC", "KTA", "AERO", "SBCK"]
+                  .map((s) => tokenBySymbol(s))
+                  .map((t) => (
+                    <li
+                      key={t.symbol}
+                      className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <TokenLogo
+                          src={t.logo}
+                          alt={`${t.name} logo`}
+                          size={20}
+                        />
+                        <span className="font-medium">{t.symbol}</span>
+                      </div>
+                      <span className="text-xs text-emerald-400">
+                        +{(Math.random() * 8 + 1).toFixed(1)}%
+                      </span>
+                    </li>
+                  ))}
               </ul>
             </div>
           </aside>

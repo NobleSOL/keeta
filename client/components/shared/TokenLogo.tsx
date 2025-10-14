@@ -1,6 +1,14 @@
 import { useState } from "react";
 
-export function TokenLogo({ src, alt, size = 20 }: { src?: string; alt: string; size?: number }) {
+export function TokenLogo({
+  src,
+  alt,
+  size = 20,
+}: {
+  src?: string;
+  alt: string;
+  size?: number;
+}) {
   const [error, setError] = useState(false);
   return (
     <span

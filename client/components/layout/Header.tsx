@@ -31,7 +31,9 @@ export function Header() {
               alt="Silverback logo"
               className="h-8 w-8 rounded-md object-contain"
             />
-            <span className="text-lg font-extrabold tracking-tight uppercase">Silverback</span>
+            <span className="text-lg font-extrabold tracking-tight uppercase">
+              Silverback
+            </span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             <NavItem to="/" label="Swap" />
