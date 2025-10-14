@@ -9,7 +9,11 @@ import SlippageSettings from "@/components/shared/SlippageSettings";
 import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
-import { fetchOpenOceanQuoteBase, toWei, fromWei } from "@/aggregator/openocean";
+import {
+  fetchOpenOceanQuoteBase,
+  toWei,
+  fromWei,
+} from "@/aggregator/openocean";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
 
@@ -24,7 +28,10 @@ export default function Index() {
   const [toAmount, setToAmount] = useState("");
   const [selecting, setSelecting] = useState<null | "from" | "to">(null);
   const [slippage, setSlippage] = useState<number>(() => {
-    const v = typeof window !== "undefined" ? localStorage.getItem("slippagePct") : null;
+    const v =
+      typeof window !== "undefined"
+        ? localStorage.getItem("slippagePct")
+        : null;
     const n = v ? Number(v) : NaN;
     return Number.isFinite(n) ? n : 0.5;
   });
@@ -52,19 +59,36 @@ export default function Index() {
 
   const { data: remoteTokens } = useTokenList();
   const publicClient = usePublicClient();
-  const [quoteOut, setQuoteOut] = useState<null | { wei: bigint; formatted: string }>(null);
+  const [quoteOut, setQuoteOut] = useState<null | {
+    wei: bigint;
+    formatted: string;
+  }>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
   const [toBalance, setToBalance] = useState<number | undefined>(undefined);
 
-  function resolveMeta(t: Token): { address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"; decimals: number } | null {
-    if (t.symbol.toUpperCase() === "ETH") return { address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", decimals: 18 };
-    const byAddr = (remoteTokens || []).find((rt) => rt.address?.toLowerCase() === (t.address || "").toLowerCase());
+  function resolveMeta(
+    t: Token,
+  ): {
+    address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+    decimals: number;
+  } | null {
+    if (t.symbol.toUpperCase() === "ETH")
+      return {
+        address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        decimals: 18,
+      };
+    const byAddr = (remoteTokens || []).find(
+      (rt) => rt.address?.toLowerCase() === (t.address || "").toLowerCase(),
+    );
     if (byAddr) return { address: byAddr.address, decimals: byAddr.decimals };
-    const bySym = (remoteTokens || []).find((rt) => rt.symbol?.toUpperCase() === t.symbol.toUpperCase());
+    const bySym = (remoteTokens || []).find(
+      (rt) => rt.symbol?.toUpperCase() === t.symbol.toUpperCase(),
+    );
     if (bySym) return { address: bySym.address, decimals: bySym.decimals };
-    if (t.address && t.decimals != null) return { address: t.address as any, decimals: t.decimals };
+    if (t.address && t.decimals != null)
+      return { address: t.address as any, decimals: t.decimals };
     return null;
   }
 
@@ -89,7 +113,10 @@ export default function Index() {
           gasPriceWei: gasPrice,
         });
         if (cancel) return;
-        setQuoteOut({ wei: q.outAmountWei, formatted: fromWei(q.outAmountWei, outMeta.decimals) });
+        setQuoteOut({
+          wei: q.outAmountWei,
+          formatted: fromWei(q.outAmountWei, outMeta.decimals),
+        });
       } catch (e: any) {
         if (!cancel) setQuoteError(e?.message || String(e));
       } finally {
@@ -208,23 +235,28 @@ export default function Index() {
                     {quoteOut && Number(fromAmount) > 0
                       ? `${(Number(quoteOut.formatted) / Number(fromAmount)).toFixed(6)} ${toToken.symbol}`
                       : quoting
-                      ? "Fetching quote..."
-                      : `–`}
+                        ? "Fetching quote..."
+                        : `–`}
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-muted-foreground">Minimum received</span>
+                  <span className="text-muted-foreground">
+                    Minimum received
+                  </span>
                   <SlippageSettings
                     value={slippage}
                     onChange={(v) => {
                       setSlippage(v);
-                      if (typeof window !== "undefined") localStorage.setItem("slippagePct", String(v));
+                      if (typeof window !== "undefined")
+                        localStorage.setItem("slippagePct", String(v));
                     }}
                     className="text-right"
                   />
                 </div>
                 {quoteError && (
-                  <div className="mt-2 text-xs text-red-400 break-words">{quoteError}</div>
+                  <div className="mt-2 text-xs text-red-400 break-words">
+                    {quoteError}
+                  </div>
                 )}
               </div>
 
@@ -237,7 +269,6 @@ export default function Index() {
               >
                 {cta.label}
               </Button>
-
             </div>
           </section>
 

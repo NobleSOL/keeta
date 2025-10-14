@@ -14,7 +14,8 @@ export default function SlippageControl({
   storageKey?: string;
 }) {
   const [internal, setInternal] = useState<number>(() => {
-    const fromLs = typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
+    const fromLs =
+      typeof window !== "undefined" ? localStorage.getItem(storageKey) : null;
     const parsed = fromLs ? Number(fromLs) : NaN;
     return Number.isFinite(parsed) ? parsed : 0.5;
   });
@@ -47,14 +48,26 @@ export default function SlippageControl({
             size="sm"
             variant={Math.abs(p - pct) < 1e-6 ? "default" : "secondary"}
             onClick={() => setPct(p)}
-            className={cn("h-7 px-2", Math.abs(p - pct) < 1e-6 && "bg-brand text-white hover:bg-brand/90")}
+            className={cn(
+              "h-7 px-2",
+              Math.abs(p - pct) < 1e-6 &&
+                "bg-brand text-white hover:bg-brand/90",
+            )}
           >
             {p}%
           </Button>
         ))}
       </div>
       <div className="flex items-center gap-1">
-        <Button type="button" size="icon" variant="secondary" className="h-7 w-7" onClick={() => setPct(pct - 0.1)}>-</Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="h-7 w-7"
+          onClick={() => setPct(pct - 0.1)}
+        >
+          -
+        </Button>
         <input
           inputMode="decimal"
           value={pct}
@@ -62,7 +75,15 @@ export default function SlippageControl({
           className="h-7 w-20 rounded-md border border-border/60 bg-secondary/60 px-2 text-right text-sm outline-none"
         />
         <span className="text-sm">%</span>
-        <Button type="button" size="icon" variant="secondary" className="h-7 w-7" onClick={() => setPct(pct + 0.1)}>+</Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          className="h-7 w-7"
+          onClick={() => setPct(pct + 0.1)}
+        >
+          +
+        </Button>
       </div>
     </div>
   );
