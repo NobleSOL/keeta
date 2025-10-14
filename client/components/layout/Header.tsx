@@ -109,7 +109,9 @@ export function Header() {
             variant="ghost"
             size="icon"
             aria-label="Settings"
-            onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+            onClick={() =>
+              document.dispatchEvent(new Event("sb:open-slippage"))
+            }
             title="Slippage settings"
           >
             <Settings2 />

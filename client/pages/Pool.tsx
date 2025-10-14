@@ -28,11 +28,15 @@ export default function Pool() {
 
   useEffect(() => {
     const handler = () => {
-      const v = typeof window !== "undefined" ? Number(localStorage.getItem("slippagePct") || "0.5") : 0.5;
+      const v =
+        typeof window !== "undefined"
+          ? Number(localStorage.getItem("slippagePct") || "0.5")
+          : 0.5;
       if (Number.isFinite(v)) setSlippage(v);
     };
     document.addEventListener("sb:slippage-updated", handler as any);
-    return () => document.removeEventListener("sb:slippage-updated", handler as any);
+    return () =>
+      document.removeEventListener("sb:slippage-updated", handler as any);
   }, []);
 
   const { address, isConnected } = useAccount();
@@ -134,7 +138,9 @@ export default function Pool() {
             <button
               type="button"
               className="text-xs text-sky-400 hover:underline"
-              onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+              onClick={() =>
+                document.dispatchEvent(new Event("sb:open-slippage"))
+              }
             >
               Slippage {slippage}%
             </button>

@@ -144,7 +144,10 @@ export default function TokenSelector({
   const saveRecent = (t: Token) => {
     const map = new Map<string, Token>();
     [t, ...recent].forEach((x) =>
-      map.set(`${x.symbol.toUpperCase()}-${(x.address || "").toLowerCase()}`, x),
+      map.set(
+        `${x.symbol.toUpperCase()}-${(x.address || "").toLowerCase()}`,
+        x,
+      ),
     );
     const arr = Array.from(map.values()).slice(0, 8);
     setRecent(arr);
@@ -195,7 +198,9 @@ export default function TokenSelector({
                   <TokenLogo src={t.logo} alt={`${t.name} logo`} size={20} />
                   <div>
                     <div className="font-medium">{t.symbol}</div>
-                    <div className="text-xs text-muted-foreground">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {t.name}
+                    </div>
                   </div>
                 </div>
                 <span className="text-xs text-muted-foreground">Recent</span>

@@ -67,9 +67,7 @@ export default function Index() {
   const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
   const [toBalance, setToBalance] = useState<number | undefined>(undefined);
 
-  function resolveMeta(
-    t: Token,
-  ): {
+  function resolveMeta(t: Token): {
     address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
     decimals: number;
   } | null {
@@ -137,11 +135,15 @@ export default function Index() {
   // Listen for global slippage updates from dialog
   useEffect(() => {
     const handler = () => {
-      const v = typeof window !== "undefined" ? Number(localStorage.getItem("slippagePct") || "0.5") : 0.5;
+      const v =
+        typeof window !== "undefined"
+          ? Number(localStorage.getItem("slippagePct") || "0.5")
+          : 0.5;
       if (Number.isFinite(v)) setSlippage(v);
     };
     document.addEventListener("sb:slippage-updated", handler as any);
-    return () => document.removeEventListener("sb:slippage-updated", handler as any);
+    return () =>
+      document.removeEventListener("sb:slippage-updated", handler as any);
   }, []);
 
   // Fetch balances for selected tokens
@@ -206,7 +208,9 @@ export default function Index() {
                 <button
                   type="button"
                   className="text-xs text-sky-400 hover:underline"
-                  onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+                  onClick={() =>
+                    document.dispatchEvent(new Event("sb:open-slippage"))
+                  }
                 >
                   Slippage {slippage}%
                 </button>
@@ -259,7 +263,9 @@ export default function Index() {
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-muted-foreground">Minimum received</span>
+                  <span className="text-muted-foreground">
+                    Minimum received
+                  </span>
                   <span>
                     {quoteOut
                       ? `${(Number(quoteOut.formatted) * (1 - slippage / 100)).toFixed(6)} ${toToken.symbol}`
