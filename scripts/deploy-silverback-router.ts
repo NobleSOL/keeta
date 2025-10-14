@@ -26,8 +26,15 @@ async function main() {
   );
   const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
 
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  console.log("Deploying SilverbackRouter...", { feeRecipient: FEE_RECIPIENT, feeBps: FEE_BPS });
+  const factory = new ethers.ContractFactory(
+    artifact.abi,
+    artifact.bytecode,
+    wallet,
+  );
+  console.log("Deploying SilverbackRouter...", {
+    feeRecipient: FEE_RECIPIENT,
+    feeBps: FEE_BPS,
+  });
   const contract = await factory.deploy(FEE_RECIPIENT, FEE_BPS);
   console.log("tx:", contract.deploymentTransaction()?.hash);
   const addr = await contract.getAddress();
