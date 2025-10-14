@@ -31,7 +31,7 @@ export default function Index() {
     <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-5">
-          <section className="order-2 md:order-1 md:col-span-3">
+          <section className="order-1 md:order-1 md:col-span-3">
             <div className="rounded-2xl border border-border/60 bg-card/60 p-6 shadow-2xl shadow-black/30 backdrop-blur">
               <div className="mb-4 flex items-center justify-between">
                 <h1 className="text-xl font-semibold">Swap</h1>
@@ -107,7 +107,7 @@ export default function Index() {
             </div>
           </section>
 
-          <aside className="order-1 md:order-2 md:col-span-2">
+          <aside className="order-2 md:order-2 md:col-span-2">
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Trending on Base
