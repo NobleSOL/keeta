@@ -34,7 +34,7 @@ export default function Index() {
     return Number.isFinite(a) && a > 0 && fromToken.symbol !== toToken.symbol;
   }, [fromAmount, fromToken.symbol, toToken.symbol]);
 
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
 
   const connectPreferred = () => {
