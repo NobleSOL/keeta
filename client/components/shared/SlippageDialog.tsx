@@ -10,7 +10,10 @@ export function SlippageDialog({ open, onClose }: { open: boolean; onClose: () =
   });
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("slippagePct", String(value));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("slippagePct", String(value));
+      document.dispatchEvent(new Event("sb:slippage-updated"));
+    }
   }, [value]);
 
   if (!open) return null;
