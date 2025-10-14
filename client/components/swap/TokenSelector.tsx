@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import TokenLogo from "@/components/shared/TokenLogo";
 import { Button } from "@/components/ui/button";
-import { TOKEN_META, tokenBySymbol } from "@/lib/tokens";
+import { TOKEN_META } from "@/lib/tokens";
 import type { Token } from "./TokenInput";
 import { usePublicClient } from "wagmi";
 import type { Address } from "viem";
 import { ERC20_ABI } from "@/lib/erc20";
+import { useTokenList } from "@/hooks/useTokenList";
 
 function isAddress(v: string): v is Address {
   return /^0x[a-fA-F0-9]{40}$/.test(v);
