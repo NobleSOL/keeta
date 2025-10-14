@@ -2,13 +2,10 @@ import { useMemo, useState } from "react";
 import TokenInput, { Token } from "@/components/swap/TokenInput";
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Info } from "lucide-react";
+import TokenLogo from "@/components/shared/TokenLogo";
+import { tokenBySymbol } from "@/lib/tokens";
 
-const TOKENS: Token[] = [
-  { symbol: "ETH", name: "Ether" },
-  { symbol: "USDC", name: "USD Coin" },
-  { symbol: "SIV", name: "Silverback" },
-  { symbol: "WBTC", name: "Wrapped BTC" },
-];
+const TOKENS: Token[] = ["ETH", "USDC", "SIV", "WBTC"].map((sym) => tokenBySymbol(sym));
 
 export default function Index() {
   const [fromToken, setFromToken] = useState<Token>(TOKENS[0]);
