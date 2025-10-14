@@ -25,12 +25,14 @@ export default function Index() {
   const { connectors, connect } = useConnect();
 
   const connectPreferred = () => {
-    const preferred = connectors.find((c) => c.id === "injected") ?? connectors[0];
+    const preferred =
+      connectors.find((c) => c.id === "injected") ?? connectors[0];
     if (preferred) connect({ connector: preferred });
   };
 
   const cta = (() => {
-    if (!isConnected) return { label: "Connect Wallet", disabled: false } as const;
+    if (!isConnected)
+      return { label: "Connect Wallet", disabled: false } as const;
     if (canSwap) return { label: "Swap", disabled: false } as const;
     return { label: "Enter an amount", disabled: true } as const;
   })();
