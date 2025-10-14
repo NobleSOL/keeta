@@ -115,7 +115,11 @@ export default function TokenSelector({
         {isAddress(query.trim()) ? (
           <div className="mb-3">
             <div className="mb-2 text-xs text-muted-foreground">
-              {loading ? "Fetching token..." : customToken ? "Custom token" : "No token found"}
+              {loading
+                ? "Fetching token..."
+                : customToken
+                  ? "Custom token"
+                  : "No token found"}
             </div>
             {customToken && (
               <button

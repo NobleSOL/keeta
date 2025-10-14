@@ -17,22 +17,31 @@ export default function Pool() {
   const { isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const connectPreferred = () => {
-    const preferred = connectors.find((c) => c.id === "injected") ?? connectors[0];
+    const preferred =
+      connectors.find((c) => c.id === "injected") ?? connectors[0];
     if (preferred) connect({ connector: preferred });
   };
 
   const canSubmit = useMemo(() => {
     const a = Number(amtA);
     const b = Number(amtB);
-    if (mode === "add") return a > 0 && b > 0 && tokenA.symbol !== tokenB.symbol;
+    if (mode === "add")
+      return a > 0 && b > 0 && tokenA.symbol !== tokenB.symbol;
     return a > 0 || b > 0; // for remove, one input can drive percentage or amounts
   }, [amtA, amtB, mode, tokenA.symbol, tokenB.symbol]);
 
   const cta = (() => {
-    if (!isConnected) return { label: "Connect Wallet", disabled: false } as const;
+    if (!isConnected)
+      return { label: "Connect Wallet", disabled: false } as const;
     if (canSubmit)
-      return { label: mode === "add" ? "Add Liquidity" : "Remove Liquidity", disabled: false } as const;
-    return { label: mode === "add" ? "Enter amounts" : "Enter amount", disabled: true } as const;
+      return {
+        label: mode === "add" ? "Add Liquidity" : "Remove Liquidity",
+        disabled: false,
+      } as const;
+    return {
+      label: mode === "add" ? "Enter amounts" : "Enter amount",
+      disabled: true,
+    } as const;
   })();
 
   const handleFlip = () => {
@@ -70,7 +79,12 @@ export default function Pool() {
               onTokenClick={() => setSelecting("A")}
             />
             <div className="flex items-center justify-center py-1">
-              <Button variant="secondary" size="icon" onClick={handleFlip} aria-label="Switch tokens">
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={handleFlip}
+                aria-label="Switch tokens"
+              >
                 <ArrowDownUp />
               </Button>
             </div>
@@ -94,7 +108,8 @@ export default function Pool() {
           </Button>
 
           <p className="mt-3 text-xs text-muted-foreground">
-            Select tokens or paste a contract address to manage liquidity. UI mirrors the Swap card.
+            Select tokens or paste a contract address to manage liquidity. UI
+            mirrors the Swap card.
           </p>
         </div>
       </div>
