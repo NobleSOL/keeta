@@ -65,11 +65,23 @@ export default function TokenSelector({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q || isAddress(q)) return knownTokens;
-    return knownTokens.filter(
-      (t) =>
-        t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
-    );
+    const base = !q || isAddress(q)
+      ? knownTokens
+      : knownTokens.filter(
+          (t) =>
+            t.symbol.toLowerCase().includes(q) ||
+            t.name.toLowerCase().includes(q),
+        );
+    // De-duplicate by address+symbol composite
+    const seen = new Set<string>();
+    const out: Token[] = [];
+    for (const t of base) {
+      const id = `${t.symbol.toUpperCase()}-${(t.address || "").toLowerCase()}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(t);
+    }
+    return out;
   }, [knownTokens, query]);
 
   useEffect(() => {
