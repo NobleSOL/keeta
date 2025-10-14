@@ -23,8 +23,11 @@ export default function Pool() {
     return Number.isFinite(n) ? n : 0.5;
   });
 
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
+  const publicClient = usePublicClient();
+  const [balA, setBalA] = useState<number | undefined>(undefined);
+  const [balB, setBalB] = useState<number | undefined>(undefined);
   const connectPreferred = () => {
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
@@ -52,6 +55,40 @@ export default function Pool() {
       disabled: true,
     } as const;
   })();
+
+  useEffect(() => {
+    let cancel = false;
+    async function getBalance(t: Token): Promise<number | undefined> {
+      if (!publicClient || !address) return undefined;
+      if (t.symbol.toUpperCase() === "ETH") {
+        const bal = await publicClient.getBalance({ address });
+        return Number(formatUnits(bal, 18));
+      }
+      const addr = (t.address as any) || undefined;
+      const decimals = t.decimals ?? 18;
+      if (!addr) return undefined;
+      const bal = (await publicClient.readContract({
+        address: addr,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [address],
+      })) as bigint;
+      return Number(formatUnits(bal, decimals));
+    }
+    async function run() {
+      setBalA(undefined);
+      setBalB(undefined);
+      if (!isConnected || !address) return;
+      const [a, b] = await Promise.all([getBalance(tokenA), getBalance(tokenB)]);
+      if (cancel) return;
+      setBalA(a);
+      setBalB(b);
+    }
+    run();
+    return () => {
+      cancel = true;
+    };
+  }, [isConnected, address, tokenA, tokenB, publicClient]);
 
   const handleFlip = () => {
     setTokenA(tokenB);
@@ -86,6 +123,7 @@ export default function Pool() {
               amount={amtA}
               onAmountChange={setAmtA}
               onTokenClick={() => setSelecting("A")}
+              balance={balA}
             />
             <div className="flex items-center justify-center py-1">
               <Button
@@ -103,6 +141,7 @@ export default function Pool() {
               amount={amtB}
               onAmountChange={setAmtB}
               onTokenClick={() => setSelecting("B")}
+              balance={balB}
             />
           </div>
 
