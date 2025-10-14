@@ -4,11 +4,11 @@ import TokenSelector from "@/components/swap/TokenSelector";
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp } from "lucide-react";
 import { tokenBySymbol } from "@/lib/tokens";
-import { useAccount, useConnect, usePublicClient } from "wagmi";
-import SlippageControl from "@/components/shared/SlippageControl";
-import SlippageSettings from "@/components/shared/SlippageSettings";
+import { useAccount, useConnect, usePublicClient, useWriteContract } from "wagmi";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
+import { v2Addresses, v2Abi } from "@/amm/v2";
+import { v3Address, nfpmAbi } from "@/amm/v3";
 
 export default function Pool() {
   const [mode, setMode] = useState<"add" | "remove">("add");
