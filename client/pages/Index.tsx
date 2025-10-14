@@ -134,6 +134,16 @@ export default function Index() {
     else setToAmount("");
   }, [quoteOut]);
 
+  // Listen for global slippage updates from dialog
+  useEffect(() => {
+    const handler = () => {
+      const v = typeof window !== "undefined" ? Number(localStorage.getItem("slippagePct") || "0.5") : 0.5;
+      if (Number.isFinite(v)) setSlippage(v);
+    };
+    document.addEventListener("sb:slippage-updated", handler as any);
+    return () => document.removeEventListener("sb:slippage-updated", handler as any);
+  }, []);
+
   // Fetch balances for selected tokens
   useEffect(() => {
     let cancel = false;
