@@ -47,6 +47,56 @@ export default function Index() {
     return { label: "Enter an amount", disabled: true } as const;
   })();
 
+  const { data: remoteTokens } = useTokenList();
+  const publicClient = usePublicClient();
+  const [quoteOut, setQuoteOut] = useState<null | { wei: bigint; formatted: string }>(null);
+  const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+
+  function resolveMeta(t: Token): { address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"; decimals: number } | null {
+    if (t.symbol.toUpperCase() === "ETH") return { address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", decimals: 18 };
+    const byAddr = (remoteTokens || []).find((rt) => rt.address?.toLowerCase() === (t.address || "").toLowerCase());
+    if (byAddr) return { address: byAddr.address, decimals: byAddr.decimals };
+    const bySym = (remoteTokens || []).find((rt) => rt.symbol?.toUpperCase() === t.symbol.toUpperCase());
+    if (bySym) return { address: bySym.address, decimals: bySym.decimals };
+    if (t.address && t.decimals != null) return { address: t.address as any, decimals: t.decimals };
+    return null;
+  }
+
+  useEffect(() => {
+    let cancel = false;
+    async function run() {
+      setQuoteError(null);
+      setQuoteOut(null);
+      if (!canSwap || !publicClient) return;
+      const inMeta = resolveMeta(fromToken);
+      const outMeta = resolveMeta(toToken);
+      if (!inMeta || !outMeta) return;
+      try {
+        setQuoting(true);
+        const gasPrice = await publicClient.getGasPrice();
+        const amountWei = toWei(fromAmount, inMeta.decimals);
+        if (amountWei <= 0n) return;
+        const q = await fetchOpenOceanQuoteBase({
+          inTokenAddress: inMeta.address,
+          outTokenAddress: outMeta.address,
+          amountWei,
+          gasPriceWei: gasPrice,
+        });
+        if (cancel) return;
+        setQuoteOut({ wei: q.outAmountWei, formatted: fromWei(q.outAmountWei, outMeta.decimals) });
+      } catch (e: any) {
+        if (!cancel) setQuoteError(e?.message || String(e));
+      } finally {
+        if (!cancel) setQuoting(false);
+      }
+    }
+    run();
+    return () => {
+      cancel = true;
+    };
+  }, [canSwap, fromAmount, fromToken, toToken, remoteTokens, publicClient]);
+
   const handleFlip = () => {
     setFromToken(toToken);
     setToToken(fromToken);
@@ -98,7 +148,11 @@ export default function Index() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Price</span>
                   <span>
-                    1 {fromToken.symbol} ≈ 2000 {toToken.symbol}
+                    {quoteOut && Number(fromAmount) > 0
+                      ? `${(Number(quoteOut.formatted) / Number(fromAmount)).toFixed(6)} ${toToken.symbol}`
+                      : quoting
+                      ? "Fetching quote..."
+                      : `–`}
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
@@ -111,6 +165,9 @@ export default function Index() {
                     }}
                   />
                 </div>
+                {quoteError && (
+                  <div className="mt-2 text-xs text-red-400 break-words">{quoteError}</div>
+                )}
               </div>
 
               <Button
