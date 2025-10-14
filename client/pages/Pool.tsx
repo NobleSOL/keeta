@@ -6,6 +6,7 @@ import { ArrowDownUp } from "lucide-react";
 import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect } from "wagmi";
 import SlippageControl from "@/components/shared/SlippageControl";
+import SlippageSettings from "@/components/shared/SlippageSettings";
 
 export default function Pool() {
   const [mode, setMode] = useState<"add" | "remove">("add");
