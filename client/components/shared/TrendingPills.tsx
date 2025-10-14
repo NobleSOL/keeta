@@ -6,11 +6,11 @@ import { useDexscreenerTokenStats } from "@/hooks/useDexscreener";
 
 function resolveBaseAddressForSymbol(symbol: string, remoteSymbols: Record<string, { address: `0x${string}` }>): `0x${string}` | null {
   const s = symbol.toUpperCase();
+  // Special-case native ETH on Base -> WETH contract address
+  if (s === "ETH") return "0x4200000000000000000000000000000000000006";
   // Prefer remote token list
   const remote = remoteSymbols[s];
   if (remote?.address) return remote.address;
-  // Special-case ETH on Base -> WETH address on Base
-  if (s === "ETH") return "0x4200000000000000000000000000000000000006";
   // Fallback to any address provided in static meta
   const meta = TOKEN_META[s];
   if (meta?.address) return meta.address as `0x${string}`;
