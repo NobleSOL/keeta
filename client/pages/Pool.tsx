@@ -108,8 +108,7 @@ export default function Pool() {
           </Button>
 
           <p className="mt-3 text-xs text-muted-foreground">
-            Select tokens or paste a contract address to manage liquidity. UI
-            mirrors the Swap card.
+            Select tokens or paste a contract address to manage liquidity.
           </p>
         </div>
       </div>
