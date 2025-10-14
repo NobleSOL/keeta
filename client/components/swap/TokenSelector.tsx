@@ -191,9 +191,9 @@ export default function TokenSelector({
         ) : null}
 
         <div className="max-h-72 overflow-y-auto rounded-lg border border-border/60">
-          {filtered.map((t) => (
+          {filtered.map((t, i) => (
             <button
-              key={`tok-${t.symbol.toUpperCase()}-${(t.address || "noaddr").toLowerCase()}`}
+              key={`tok-${t.symbol.toUpperCase()}-${(t.address || "noaddr").toLowerCase()}-${i}`}
               onClick={() => {
                 onSelect(t);
                 onClose();
