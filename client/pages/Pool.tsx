@@ -44,6 +44,7 @@ export default function Pool() {
   const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const publicClient = usePublicClient();
+  const { writeContractAsync, isPending: isWriting } = useWriteContract();
   const [balA, setBalA] = useState<number | undefined>(undefined);
   const [balB, setBalB] = useState<number | undefined>(undefined);
   const connectPreferred = () => {
