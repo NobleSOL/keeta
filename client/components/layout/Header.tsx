@@ -73,7 +73,7 @@ export function Header() {
               <div
                 className={cn(
                   "size-2 rounded-full animate-pulse",
-                  network === "Base" ? "bg-sky-400" : "bg-purple-400",
+                  network === "Base" ? "bg-sky-400" : "bg-[#FF6F5E]",
                 )}
               />
               <span className="font-semibold">{network}</span>
