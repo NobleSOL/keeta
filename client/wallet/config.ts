@@ -5,7 +5,8 @@ import { injected, coinbaseWallet, walletConnect } from "wagmi/connectors";
 const wcId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as
   | string
   | undefined;
-const baseRpc = (import.meta as any).env?.VITE_BASE_RPC_URL || "https://mainnet.base.org";
+const baseRpc =
+  (import.meta as any).env?.VITE_BASE_RPC_URL || "https://mainnet.base.org";
 
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],
