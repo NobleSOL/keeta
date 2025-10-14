@@ -109,11 +109,6 @@ export default function Index() {
                 {cta.label}
               </Button>
 
-              <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <Info className="size-4" />
-                Quotes are simulated for demo. Plug your DEX logic and wallet to
-                enable real swaps.
-              </p>
             </div>
           </section>
 
