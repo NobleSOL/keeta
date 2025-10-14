@@ -26,6 +26,15 @@ export default function Pool() {
     return Number.isFinite(n) ? n : 0.5;
   });
 
+  useEffect(() => {
+    const handler = () => {
+      const v = typeof window !== "undefined" ? Number(localStorage.getItem("slippagePct") || "0.5") : 0.5;
+      if (Number.isFinite(v)) setSlippage(v);
+    };
+    document.addEventListener("sb:slippage-updated", handler as any);
+    return () => document.removeEventListener("sb:slippage-updated", handler as any);
+  }, []);
+
   const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const publicClient = usePublicClient();
