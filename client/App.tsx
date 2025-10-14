@@ -1,5 +1,6 @@
 import "./global.css";
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import SlippagePortal from "@/components/shared/SlippageDialog";
 import { createRoot, type Root } from "react-dom/client";
