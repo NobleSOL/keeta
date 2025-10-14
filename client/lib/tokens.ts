@@ -39,7 +39,7 @@ export const TOKEN_META: Record<string, TokenMeta> = {
   KTA: {
     symbol: "KTA",
     name: "Keeta",
-    logo: undefined,
+    logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_kta.webp?i=kds",
   },
 };
 
