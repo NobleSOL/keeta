@@ -44,9 +44,21 @@ export default function ConnectButton() {
       </div>
     );
 
+  const connectPreferred = async () => {
+    const preferred =
+      connectors.find((c) => /phantom/i.test(c.name)) ??
+      connectors.find((c) => c.id === "injected") ??
+      connectors[0];
+    try {
+      if (preferred) await connect({ connector: preferred });
+    } catch (_e) {
+      setOpen(true);
+    }
+  };
+
   return (
     <div className="relative" ref={ref}>
-      <Button onClick={() => setOpen((o) => !o)}>Connect Wallet</Button>
+      <Button onClick={connectPreferred}>Connect Wallet</Button>
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-md border border-border/60 bg-popover p-1 text-popover-foreground shadow-md">
           {connectors.map((c) => (
