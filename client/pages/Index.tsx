@@ -6,6 +6,7 @@ import { ArrowDownUp, Info } from "lucide-react";
 import TokenLogo from "@/components/shared/TokenLogo";
 import SlippageControl from "@/components/shared/SlippageControl";
 import SlippageSettings from "@/components/shared/SlippageSettings";
+import QuickFill from "@/components/shared/QuickFill";
 import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
