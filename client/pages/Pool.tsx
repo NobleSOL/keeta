@@ -116,18 +116,27 @@ export default function Pool() {
     <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
         <div className="mx-auto max-w-3xl rounded-2xl border border-border/60 bg-card/60 p-6 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setMode("add")}
+                className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "add" ? "bg-brand text-white" : "bg-secondary/60"}`}
+              >
+                Add
+              </button>
+              <button
+                onClick={() => setMode("remove")}
+                className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "remove" ? "bg-brand text-white" : "bg-secondary/60"}`}
+              >
+                Remove
+              </button>
+            </div>
             <button
-              onClick={() => setMode("add")}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "add" ? "bg-brand text-white" : "bg-secondary/60"}`}
+              type="button"
+              className="text-xs text-sky-400 hover:underline"
+              onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
             >
-              Add
-            </button>
-            <button
-              onClick={() => setMode("remove")}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "remove" ? "bg-brand text-white" : "bg-secondary/60"}`}
-            >
-              Remove
+              Slippage {slippage}%
             </button>
           </div>
 
