@@ -245,18 +245,23 @@ export default function Index() {
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    Minimum received
-                  </span>
-                  <SlippageSettings
-                    value={slippage}
-                    onChange={(v) => {
-                      setSlippage(v);
-                      if (typeof window !== "undefined")
-                        localStorage.setItem("slippagePct", String(v));
-                    }}
-                    className="text-right"
-                  />
+                  <span className="text-muted-foreground">Minimum received</span>
+                  <div className="flex items-center gap-2">
+                    <span>
+                      {quoteOut
+                        ? `${(Number(quoteOut.formatted) * (1 - slippage / 100)).toFixed(6)} ${toToken.symbol}`
+                        : "–"}
+                    </span>
+                    <SlippageSettings
+                      value={slippage}
+                      onChange={(v) => {
+                        setSlippage(v);
+                        if (typeof window !== "undefined")
+                          localStorage.setItem("slippagePct", String(v));
+                      }}
+                      className="text-right"
+                    />
+                  </div>
                 </div>
                 {quoteError && (
                   <div className="mt-2 text-xs text-red-400 break-words">
