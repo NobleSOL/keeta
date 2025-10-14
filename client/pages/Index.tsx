@@ -156,13 +156,14 @@ export default function Index() {
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-muted-foreground">Slippage</span>
-                  <SlippageControl
+                  <span className="text-muted-foreground">Minimum received</span>
+                  <SlippageSettings
                     value={slippage}
                     onChange={(v) => {
                       setSlippage(v);
                       if (typeof window !== "undefined") localStorage.setItem("slippagePct", String(v));
                     }}
+                    className="text-right"
                   />
                 </div>
                 {quoteError && (
