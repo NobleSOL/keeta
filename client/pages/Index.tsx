@@ -4,6 +4,7 @@ import TokenSelector from "@/components/swap/TokenSelector";
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Info } from "lucide-react";
 import TokenLogo from "@/components/shared/TokenLogo";
+import SlippageControl from "@/components/shared/SlippageControl";
 import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect } from "wagmi";
 
