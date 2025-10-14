@@ -10,7 +10,8 @@ const baseRpc =
 
 const appUrl = typeof window !== "undefined" ? window.location.origin : "";
 const appName = "Silverback DEX";
-const appDescription = "Trade on Base with Silverback — deep liquidity and MEV-aware routing.";
+const appDescription =
+  "Trade on Base with Silverback — deep liquidity and MEV-aware routing.";
 const appIcon =
   "https://cdn.builder.io/api/v1/image/assets%2Fd70091a6f5494e0195b033a72f7e79ae%2Fee3a0a5652aa480f9aa42277503e94b2?format=webp&width=256";
 
