@@ -16,6 +16,7 @@ export default function Index() {
   const [toToken, setToToken] = useState<Token>(tokenBySymbol("SBCK"));
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
+  const [selecting, setSelecting] = useState<null | "from" | "to">(null);
 
   const canSwap = useMemo(() => {
     const a = Number(fromAmount);
