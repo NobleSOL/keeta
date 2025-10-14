@@ -2,6 +2,8 @@ export type TokenMeta = {
   symbol: string;
   name: string;
   logo?: string;
+  address?: `0x${string}`;
+  decimals?: number;
 };
 
 // Public, cacheable logos. Fallback handled in TokenLogo component.
@@ -40,6 +42,8 @@ export const TOKEN_META: Record<string, TokenMeta> = {
     symbol: "KTA",
     name: "Keeta",
     logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_kta.webp?i=kds",
+    address: "0xc0634090F2Fe6c6d75e61Be2b949464aBB498973",
+    decimals: 18,
   },
 };
 
