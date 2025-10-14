@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import TokenInput, { Token } from "@/components/swap/TokenInput";
+import TokenSelector from "@/components/swap/TokenSelector";
 import { Button } from "@/components/ui/button";
 import { ArrowDownUp, Info } from "lucide-react";
 import TokenLogo from "@/components/shared/TokenLogo";
