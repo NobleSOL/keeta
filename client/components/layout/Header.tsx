@@ -105,7 +105,13 @@ export function Header() {
               </div>
             )}
           </div>
-          <Button variant="ghost" size="icon" aria-label="Settings">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Settings"
+            onClick={() => document.dispatchEvent(new Event("sb:open-slippage"))}
+            title="Slippage settings"
+          >
             <Settings2 />
           </Button>
           <div>
