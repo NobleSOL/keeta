@@ -8,6 +8,8 @@ export type Token = {
   symbol: string;
   name: string;
   logo?: string;
+  address?: `0x${string}`;
+  decimals?: number;
 };
 
 export function TokenInput({
@@ -44,6 +46,7 @@ export function TokenInput({
           type="button"
           onClick={onTokenClick}
           className="min-w-24 sm:min-w-28 shrink-0 justify-between bg-card hover:bg-card/80 px-3"
+          aria-label={`Select token for ${label}`}
         >
           <div className="flex items-center gap-2">
             <TokenLogo src={token.logo} alt={`${token.name} logo`} size={20} />
