@@ -29,7 +29,11 @@ export function Header() {
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (open && menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (
+        open &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };

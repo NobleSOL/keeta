@@ -2,7 +2,9 @@ import { http, createConfig } from "wagmi";
 import { base, mainnet } from "viem/chains";
 import { injected, coinbaseWallet, walletConnect } from "wagmi/connectors";
 
-const wcId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string | undefined;
+const wcId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as
+  | string
+  | undefined;
 
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],

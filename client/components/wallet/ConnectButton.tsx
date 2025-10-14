@@ -17,7 +17,8 @@ export default function ConnectButton() {
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (open && ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (open && ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("click", onDoc);
     return () => document.removeEventListener("click", onDoc);
@@ -51,9 +52,12 @@ export default function ConnectButton() {
           {connectors.map((c) => (
             <button
               key={c.id}
-              className={cn("block w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-accent", {
-                "opacity-50": !c.ready,
-              })}
+              className={cn(
+                "block w-full rounded-sm px-3 py-2 text-left text-sm hover:bg-accent",
+                {
+                  "opacity-50": !c.ready,
+                },
+              )}
               disabled={!c.ready}
               onClick={() => {
                 connect({ connector: c });
@@ -64,7 +68,9 @@ export default function ConnectButton() {
             </button>
           ))}
           {status === "error" && (
-            <div className="px-3 py-2 text-xs text-destructive-foreground">{error?.message}</div>
+            <div className="px-3 py-2 text-xs text-destructive-foreground">
+              {error?.message}
+            </div>
           )}
         </div>
       )}
