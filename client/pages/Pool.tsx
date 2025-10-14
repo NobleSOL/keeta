@@ -112,6 +112,31 @@ export default function Pool() {
     };
   }, [isConnected, address, tokenA, tokenB, publicClient]);
 
+  const handleCreatePool = async () => {
+    if (!isConnected) return connectPreferred();
+    if (version === "v2") {
+      const addrs = v2Addresses();
+      if (!addrs) return alert("Set VITE_SB_V2_FACTORY and VITE_SB_V2_ROUTER envs");
+      await writeContractAsync({
+        address: addrs.factory,
+        abi: v2Abi.factory,
+        functionName: "createPair",
+        args: [tokenA.address as any, tokenB.address as any],
+      });
+    } else {
+      const nfpm = v3Address();
+      if (!nfpm) return alert("Set VITE_V3_NFPM env");
+      const SQRT_PRICE_1_1 = BigInt("79228162514264337593543950336");
+      await writeContractAsync({
+        address: nfpm,
+        abi: nfpmAbi,
+        functionName: "createAndInitializePoolIfNecessary",
+        args: [tokenA.address as any, tokenB.address as any, feeTier as any, SQRT_PRICE_1_1],
+        value: 0n,
+      });
+    }
+  };
+
   const handleFlip = () => {
     setTokenA(tokenB);
     setTokenB(tokenA);
