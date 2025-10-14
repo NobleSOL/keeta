@@ -107,7 +107,7 @@ export default function Pool() {
           <div className="mt-4 rounded-xl border border-border/60 bg-secondary/60 p-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Slippage</span>
-              <SlippageControl
+              <SlippageSettings
                 value={slippage}
                 onChange={(v) => {
                   setSlippage(v);
