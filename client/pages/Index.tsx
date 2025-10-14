@@ -10,6 +10,8 @@ import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
 import { fetchOpenOceanQuoteBase, toWei, fromWei } from "@/aggregator/openocean";
+import { ERC20_ABI } from "@/lib/erc20";
+import { formatUnits } from "viem";
 
 const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => ({
   ...tokenBySymbol(sym),
