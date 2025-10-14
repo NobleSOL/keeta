@@ -18,6 +18,11 @@ export default function Index() {
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [selecting, setSelecting] = useState<null | "from" | "to">(null);
+  const [slippage, setSlippage] = useState<number>(() => {
+    const v = typeof window !== "undefined" ? localStorage.getItem("slippagePct") : null;
+    const n = v ? Number(v) : NaN;
+    return Number.isFinite(n) ? n : 0.5;
+  });
 
   const canSwap = useMemo(() => {
     const a = Number(fromAmount);
@@ -96,7 +101,13 @@ export default function Index() {
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-muted-foreground">Slippage</span>
-                  <span>0.50%</span>
+                  <SlippageControl
+                    value={slippage}
+                    onChange={(v) => {
+                      setSlippage(v);
+                      if (typeof window !== "undefined") localStorage.setItem("slippagePct", String(v));
+                    }}
+                  />
                 </div>
               </div>
 
