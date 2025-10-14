@@ -26,9 +26,30 @@ export default function TokenSelector({
   const [customToken, setCustomToken] = useState<Token | null>(null);
   const publicClient = usePublicClient();
 
+  const { data: remoteTokens } = useTokenList();
   const knownTokens: Token[] = useMemo(() => {
-    return Object.values(TOKEN_META).map((m) => ({ ...m }));
-  }, []);
+    const base: Token[] = Object.values(TOKEN_META).map((m) => ({ ...m }));
+    const rem: Token[] = (remoteTokens || []).map((t) => ({
+      symbol: t.symbol,
+      name: t.name,
+      address: t.address,
+      decimals: t.decimals,
+      logo: t.logoURI,
+    }));
+    const byAddr = new Map<string, Token>();
+    const bySym = new Map<string, Token>();
+    [...base, ...rem].forEach((t) => {
+      const keyA = (t.address || "").toLowerCase();
+      const keyS = t.symbol.toUpperCase();
+      if (keyA && !byAddr.has(keyA)) byAddr.set(keyA, t);
+      if (!bySym.has(keyS)) bySym.set(keyS, t);
+    });
+    // Prefer address uniqueness first, then symbols
+    const merged = new Map<string, Token>();
+    byAddr.forEach((t) => merged.set((t.address || t.symbol).toLowerCase(), t));
+    bySym.forEach((t) => merged.set((t.address || t.symbol).toLowerCase(), t));
+    return Array.from(merged.values());
+  }, [remoteTokens]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -131,7 +152,7 @@ export default function TokenSelector({
                 className="flex w-full items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2 text-left hover:bg-secondary/60"
               >
                 <div className="flex items-center gap-2">
-                  <TokenLogo alt={`${customToken.name} logo`} size={20} />
+                  <TokenLogo src={customToken.logo} alt={`${customToken.name} logo`} size={20} />
                   <div>
                     <div className="font-medium">{customToken.symbol}</div>
                     <div className="text-xs text-muted-foreground">
