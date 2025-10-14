@@ -293,7 +293,7 @@ export default function Index() {
 
           <aside className="order-2 md:order-2 md:col-span-2">
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
-              <TrendingPills symbols={["ETH", "USDC", "KTA", "AERO", "SBCK"]} />
+              <TrendingPills symbols={["ETH", "KTA", "AERO", "SBCK"]} />
             </div>
           </aside>
         </div>
