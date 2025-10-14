@@ -34,7 +34,7 @@ export function TokenInput({
   }, [balance]);
 
   return (
-    <div className="rounded-xl border border-border/60 bg-secondary/60 p-4">
+    <div className="rounded-xl border border-border/60 bg-secondary/60 p-4 overflow-hidden">
       <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
         <span>{label}</span>
         {formattedBalance !== "" && <span>Bal: {formattedBalance}</span>}
@@ -43,7 +43,7 @@ export function TokenInput({
         <Button
           type="button"
           onClick={onTokenClick}
-          className="min-w-28 justify-between bg-card hover:bg-card/80 px-3"
+          className="min-w-24 sm:min-w-28 shrink-0 justify-between bg-card hover:bg-card/80 px-3"
         >
           <div className="flex items-center gap-2">
             <TokenLogo src={token.logo} alt={`${token.name} logo`} size={20} />
@@ -54,12 +54,12 @@ export function TokenInput({
         <input
           inputMode="decimal"
           pattern="^[0-9]*[.,]?[0-9]*$"
-          placeholder="0.0"
+          placeholder="0.00"
           value={amount}
           onChange={(e) => onAmountChange(e.target.value.replace(",", "."))}
           disabled={disabled}
           className={cn(
-            "ml-auto flex-1 bg-transparent text-right text-3xl font-semibold outline-none placeholder:text-muted-foreground/60",
+            "ml-auto flex-1 min-w-0 bg-transparent text-right text-2xl sm:text-3xl font-semibold outline-none placeholder:text-muted-foreground/60",
           )}
         />
       </div>
