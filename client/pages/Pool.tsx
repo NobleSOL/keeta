@@ -14,6 +14,11 @@ export default function Pool() {
   const [amtA, setAmtA] = useState("");
   const [amtB, setAmtB] = useState("");
   const [selecting, setSelecting] = useState<null | "A" | "B">(null);
+  const [slippage, setSlippage] = useState<number>(() => {
+    const v = typeof window !== "undefined" ? localStorage.getItem("slippagePct") : null;
+    const n = v ? Number(v) : NaN;
+    return Number.isFinite(n) ? n : 0.5;
+  });
 
   const { isConnected } = useAccount();
   const { connectors, connect } = useConnect();
