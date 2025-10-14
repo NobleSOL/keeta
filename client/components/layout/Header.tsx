@@ -103,10 +103,10 @@ export function Header() {
           <Button variant="ghost" size="icon" aria-label="Settings">
             <Settings2 />
           </Button>
-          <Button>
-            <Wallet2 />
-            Connect Wallet
-          </Button>
+          <div>
+            {/* Wagmi-based connect */}
+            <ConnectButton />
+          </div>
         </div>
       </div>
     </header>
