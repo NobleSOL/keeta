@@ -14,9 +14,14 @@ async function fetchDexscreenerTokens(
   );
   if (addrs.length === 0) return {};
   const url = `https://api.dexscreener.com/latest/dex/tokens/${addrs.join(",")}`;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
-  if (!res.ok) throw new Error(`Dexscreener tokens failed: ${res.status}`);
-  const json = await res.json();
+  try {
+    const res = await fetch(url, { headers: { accept: "application/json" } });
+    if (!res.ok) throw new Error(`Dexscreener tokens failed: ${res.status}`);
+    const json = await res.json();
+  } catch (err) {
+    console.warn("Dexscreener fetch failed", err);
+    return Object.fromEntries(addrs.map((a) => [a, { address: a as `0x${string}`, priceUsd: null, change24h: null }]));
+  }
   const pairs: any[] = json?.pairs || [];
   const bestByAddr: Record<string, any> = {};
   for (const p of pairs) {
