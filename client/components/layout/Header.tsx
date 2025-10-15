@@ -2,7 +2,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Settings2, Wallet2, Menu } from "lucide-react";
+import { ChevronDown, Wallet2, Menu } from "lucide-react";
 import ConnectButton from "@/components/wallet/ConnectButton";
 
 const NavItem = ({ to, label }: { to: string; label: string }) => (
@@ -52,7 +52,7 @@ export function Header() {
               alt="Silverback logo"
               className="h-8 w-8 rounded-md object-contain"
             />
-            <span className="text-lg font-extrabold tracking-tight uppercase">
+            <span className="hidden md:inline text-lg font-extrabold tracking-tight uppercase">
               Silverback
             </span>
           </Link>
@@ -130,17 +130,6 @@ export function Header() {
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Settings"
-            onClick={() =>
-              document.dispatchEvent(new Event("sb:open-slippage"))
-            }
-            title="Slippage settings"
-          >
-            <Settings2 />
-          </Button>
           <div>
             {/* Wagmi-based connect */}
             <ConnectButton />
