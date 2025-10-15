@@ -159,8 +159,8 @@ export default function Pool() {
     <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
         <div className="mx-auto max-w-3xl rounded-2xl border border-border/60 bg-card/60 p-6 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-md bg-secondary/60 p-1 text-xs">
                 <button
                   className={`px-2 py-1 rounded ${version === "v2" ? "bg-brand text-white" : ""}`}
@@ -200,7 +200,7 @@ export default function Pool() {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 sm:self-auto">
               <button
                 type="button"
                 className="rounded-md bg-secondary/60 px-3 py-1 text-xs"
