@@ -32,6 +32,11 @@ const siteUrl =
   ((import.meta as any).env?.VITE_PUBLIC_SITE_URL as string) ||
   "https://silverbackdex.netlify.app";
 
+// Coinbase connector allowlist
+const cbAllowRaw = (import.meta as any).env?.VITE_CB_ALLOWED_ORIGINS as string | undefined;
+const cbAllowed = (cbAllowRaw || "").split(",").map((s) => s.trim()).filter(Boolean);
+const enableCoinbase = cbAllowed.length > 0 && appOrigin && cbAllowed.includes(appOrigin);
+
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],
   transports: {
@@ -40,7 +45,7 @@ export const wagmiConfig = createConfig({
   },
   connectors: [
     injected({ shimDisconnect: true }),
-    coinbaseWallet({ appName, appLogoUrl: appIcon }),
+    ...(enableCoinbase ? [coinbaseWallet({ appName, appLogoUrl: appIcon })] : []),
     ...(enableWalletConnect
       ? [
           walletConnect({
@@ -55,4 +60,6 @@ export const wagmiConfig = createConfig({
         ]
       : []),
   ],
+  // Avoid auto reconnecting to connectors that may require COOP/CORS on previews
+  autoConnect: false,
 });
