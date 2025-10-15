@@ -20,7 +20,12 @@ async function fetchDexscreenerTokens(
     const json = await res.json();
   } catch (err) {
     console.warn("Dexscreener fetch failed", err);
-    return Object.fromEntries(addrs.map((a) => [a, { address: a as `0x${string}`, priceUsd: null, change24h: null }]));
+    return Object.fromEntries(
+      addrs.map((a) => [
+        a,
+        { address: a as `0x${string}`, priceUsd: null, change24h: null },
+      ]),
+    );
   }
   const pairs: any[] = json?.pairs || [];
   const bestByAddr: Record<string, any> = {};

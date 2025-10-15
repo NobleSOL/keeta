@@ -23,7 +23,8 @@ const wcAllowed = (wcAllowRaw || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-const isAllowedOrigin = wcAllowed.length > 0 && appOrigin && wcAllowed.includes(appOrigin);
+const isAllowedOrigin =
+  wcAllowed.length > 0 && appOrigin && wcAllowed.includes(appOrigin);
 const enableWalletConnect = Boolean(wcId && isAllowedOrigin);
 
 // Canonical public URL used in WalletConnect metadata (should be production domain)
