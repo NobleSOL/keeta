@@ -52,7 +52,7 @@ export function Header() {
               alt="Silverback logo"
               className="h-8 w-8 rounded-md object-contain"
             />
-            <span className="hidden md:inline text-lg font-extrabold tracking-tight uppercase">
+            <span className="text-base md:text-lg font-extrabold tracking-tight uppercase">
               Silverback
             </span>
           </Link>
