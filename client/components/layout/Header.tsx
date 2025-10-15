@@ -2,7 +2,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Settings2, Wallet2 } from "lucide-react";
+import { ChevronDown, Settings2, Wallet2, Menu } from "lucide-react";
 import ConnectButton from "@/components/wallet/ConnectButton";
 
 const NavItem = ({ to, label }: { to: string; label: string }) => (
@@ -26,20 +26,21 @@ export function Header() {
   const [network, setNetwork] = useState<"Base" | "Keeta">("Base");
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (
-        open &&
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node)
-      ) {
+      if (open && menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpen(false);
+      }
+      if (mobileOpen && mobileRef.current && !mobileRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
       }
     };
     document.addEventListener("click", onDocClick);
     return () => document.removeEventListener("click", onDocClick);
-  }, [open]);
+  }, [open, mobileOpen]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -62,6 +63,30 @@ export function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative md:hidden" ref={mobileRef}>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="md:hidden"
+              aria-label="Open navigation menu"
+              aria-haspopup="menu"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              <Menu />
+            </Button>
+            {mobileOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-40 overflow-hidden rounded-md border border-border/60 bg-popover p-1 text-popover-foreground shadow-md z-50"
+              >
+                <Link to="/" className="block rounded-sm px-3 py-2 text-sm hover:bg-accent" onClick={() => setMobileOpen(false)}>Swap</Link>
+                <Link to="/pool" className="block rounded-sm px-3 py-2 text-sm hover:bg-accent" onClick={() => setMobileOpen(false)}>Pool</Link>
+                <Link to="/portfolio" className="block rounded-sm px-3 py-2 text-sm hover:bg-accent" onClick={() => setMobileOpen(false)}>Portfolio</Link>
+              </div>
+            )}
+          </div>
+
           <div className="relative" ref={menuRef}>
             <Button
               variant="secondary"
