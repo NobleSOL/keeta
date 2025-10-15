@@ -33,9 +33,15 @@ const siteUrl =
   "https://silverbackdex.netlify.app";
 
 // Coinbase connector allowlist
-const cbAllowRaw = (import.meta as any).env?.VITE_CB_ALLOWED_ORIGINS as string | undefined;
-const cbAllowed = (cbAllowRaw || "").split(",").map((s) => s.trim()).filter(Boolean);
-const enableCoinbase = cbAllowed.length > 0 && appOrigin && cbAllowed.includes(appOrigin);
+const cbAllowRaw = (import.meta as any).env?.VITE_CB_ALLOWED_ORIGINS as
+  | string
+  | undefined;
+const cbAllowed = (cbAllowRaw || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const enableCoinbase =
+  cbAllowed.length > 0 && appOrigin && cbAllowed.includes(appOrigin);
 
 export const wagmiConfig = createConfig({
   chains: [base, mainnet],
@@ -45,7 +51,9 @@ export const wagmiConfig = createConfig({
   },
   connectors: [
     injected({ shimDisconnect: true }),
-    ...(enableCoinbase ? [coinbaseWallet({ appName, appLogoUrl: appIcon })] : []),
+    ...(enableCoinbase
+      ? [coinbaseWallet({ appName, appLogoUrl: appIcon })]
+      : []),
     ...(enableWalletConnect
       ? [
           walletConnect({
