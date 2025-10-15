@@ -48,7 +48,7 @@ export function Header() {
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2">
             <img
-              src="https://cdn.builder.io/api/v1/image/assets%2Fd70091a6f5494e0195b033a72f7e79ae%2Fee3a0a5652aa480f9aa42277503e94b2?format=webp&width=64"
+              src="https://cdn.builder.io/api/v1/image/assets%2Fd70091a6f5494e0195b033a72f7e79ae%2F8d9cef3f4ef3425987789ac66faf64a4?format=webp&width=64"
               alt="Silverback logo"
               className="h-8 w-8 rounded-md object-contain"
             />
