@@ -18,7 +18,8 @@
     "start": "node dist/server/node-build.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "deploy:v2": "node scripts/deploy-silverback-v2.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.1",
