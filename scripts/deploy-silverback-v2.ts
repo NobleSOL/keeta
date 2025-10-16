@@ -44,18 +44,22 @@ async function main() {
     feeToSetter: await wallet.getAddress(),
     initialFeeTo: FEE_WALLET,
   });
-  const factory = await FactoryCF.deploy(
-    await wallet.getAddress(),
-    FEE_WALLET,
-  );
+  const factory = await FactoryCF.deploy(await wallet.getAddress(), FEE_WALLET);
   console.log("tx:", factory.deploymentTransaction()?.hash);
   const factoryAddr = await factory.getAddress();
   console.log("Factory:", factoryAddr);
 
   // Router
   const rArtifact = readArtifact("SilverbackV2RouterV2");
-  const RouterCF = new ethers.ContractFactory(rArtifact.abi, rArtifact.bytecode, wallet);
-  console.log("Deploying SilverbackV2RouterV2...", { factory: factoryAddr, WETH });
+  const RouterCF = new ethers.ContractFactory(
+    rArtifact.abi,
+    rArtifact.bytecode,
+    wallet,
+  );
+  console.log("Deploying SilverbackV2RouterV2...", {
+    factory: factoryAddr,
+    WETH,
+  });
   const router = await RouterCF.deploy(factoryAddr, WETH);
   console.log("tx:", router.deploymentTransaction()?.hash);
   const routerAddr = await router.getAddress();
@@ -64,10 +68,16 @@ async function main() {
   console.log("\nVerify commands (BaseScan):");
   console.log("Factory:");
   console.log("  Address:", factoryAddr);
-  console.log("  Constructor args (JSON):", JSON.stringify([await wallet.getAddress(), FEE_WALLET]));
+  console.log(
+    "  Constructor args (JSON):",
+    JSON.stringify([await wallet.getAddress(), FEE_WALLET]),
+  );
   console.log("Router:");
   console.log("  Address:", routerAddr);
-  console.log("  Constructor args (JSON):", JSON.stringify([factoryAddr, WETH]));
+  console.log(
+    "  Constructor args (JSON):",
+    JSON.stringify([factoryAddr, WETH]),
+  );
 }
 
 main().catch((e) => {

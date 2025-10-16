@@ -4,7 +4,8 @@ import "@nomicfoundation/hardhat-verify";
 
 const BASE_RPC_URL = process.env.BASE_RPC_URL || "https://mainnet.base.org";
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
-const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || process.env.ETHERSCAN_API_KEY || "";
+const BASESCAN_API_KEY =
+  process.env.BASESCAN_API_KEY || process.env.ETHERSCAN_API_KEY || "";
 
 const config: HardhatUserConfig = {
   solidity: {
