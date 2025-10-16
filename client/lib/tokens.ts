@@ -17,6 +17,8 @@ export const TOKEN_META: Record<string, TokenMeta> = {
     symbol: "USDC",
     name: "USD Coin",
     logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_usdc.webp?i=kds",
+    address: "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913",
+    decimals: 6,
   },
   WBTC: {
     symbol: "WBTC",
@@ -27,6 +29,8 @@ export const TOKEN_META: Record<string, TokenMeta> = {
     symbol: "AERO",
     name: "Aerodrome",
     logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_aero.webp?i=kds",
+    address: "0x940181a94A35A4569E4529A3CDfB74e38FD98631",
+    decimals: 18,
   },
   DEGEN: {
     symbol: "DEGEN",
