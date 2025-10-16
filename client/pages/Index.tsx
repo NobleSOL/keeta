@@ -15,6 +15,7 @@ import {
 } from "@/aggregator/openocean";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
+import { base } from "viem/chains";
 
 const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => ({
   ...tokenBySymbol(sym),
@@ -46,7 +47,7 @@ export default function Index() {
   const connectPreferred = () => {
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
-    if (preferred) connect({ connector: preferred });
+    if (preferred) connect({ connector: preferred, chainId: base.id });
   };
 
   const cta = (() => {
