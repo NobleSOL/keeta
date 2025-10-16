@@ -35,6 +35,13 @@ library SilverbackV2Library {
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
+    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
+        require(amountA > 0, "INSUFFICIENT_AMOUNT");
+        require(reserveA > 0 && reserveB > 0, "INSUFFICIENT_LIQUIDITY");
+        amountB = amountA * reserveB / reserveA;
+    }
+
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
         require(amountIn > 0, "INSUFFICIENT_INPUT_AMOUNT");
