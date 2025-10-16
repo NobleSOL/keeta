@@ -51,7 +51,7 @@ export default function ConnectButton() {
       connectors.find((c) => c.id === "injected") ??
       connectors[0];
     try {
-      if (preferred) await connect({ connector: preferred });
+      if (preferred) await connect({ connector: preferred, chainId: base.id });
     } catch (_e) {
       setOpen(true);
     }
@@ -73,7 +73,7 @@ export default function ConnectButton() {
               )}
               disabled={!c.ready}
               onClick={() => {
-                connect({ connector: c });
+                connect({ connector: c, chainId: base.id });
                 setOpen(false);
               }}
             >
