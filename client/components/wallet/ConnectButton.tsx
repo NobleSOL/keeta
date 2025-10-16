@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { base } from "viem/chains";
 
 function truncate(addr?: string) {
   if (!addr) return "";
