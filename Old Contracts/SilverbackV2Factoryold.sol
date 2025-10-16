@@ -16,23 +16,18 @@ contract SilverbackV2Factory is ISilverbackV2Factory {
         feeToSetter = _feeToSetter;
     }
 
-    function allPairsLength() external view override returns (uint) {
-        return allPairs.length;
-    }
+    function allPairsLength() external view override returns (uint) { return allPairs.length; }
 
     function createPair(address tokenA, address tokenB) external override returns (address pair) {
         require(tokenA != tokenB, "IDENTICAL_ADDRESSES");
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         require(token0 != address(0), "ZERO_ADDRESS");
         require(getPair[token0][token1] == address(0), "PAIR_EXISTS");
-
         pair = address(new SilverbackV2Pair());
         SilverbackV2Pair(pair).initialize(token0, token1);
-
         getPair[token0][token1] = pair;
         getPair[token1][token0] = pair;
         allPairs.push(pair);
-
         emit PairCreated(token0, token1, pair, allPairs.length);
     }
 
