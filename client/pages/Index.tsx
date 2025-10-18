@@ -8,11 +8,8 @@ import QuickFill from "@/components/shared/QuickFill";
 import { tokenBySymbol } from "@/lib/tokens";
 import { useAccount, useConnect, usePublicClient } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
-import {
-  fetchOpenOceanQuoteBase,
-  toWei,
-  fromWei,
-} from "@/aggregator/openocean";
+import { toWei, fromWei } from "@/aggregator/openocean";
+import { getBestAggregatedQuote } from "@/aggregator/engine";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
 import { base } from "viem/chains";
@@ -62,6 +59,8 @@ export default function Index() {
   const [quoteOut, setQuoteOut] = useState<null | {
     wei: bigint;
     formatted: string;
+    venue?: string;
+    feeWei?: bigint;
   }>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -104,16 +103,19 @@ export default function Index() {
         const gasPrice = await publicClient.getGasPrice();
         const amountWei = toWei(fromAmount, inMeta.decimals);
         if (amountWei <= 0n) return;
-        const q = await fetchOpenOceanQuoteBase({
-          inTokenAddress: inMeta.address,
-          outTokenAddress: outMeta.address,
+        const q = await getBestAggregatedQuote(
+          publicClient,
+          { address: inMeta.address, decimals: inMeta.decimals },
+          { address: outMeta.address, decimals: outMeta.decimals },
           amountWei,
-          gasPriceWei: gasPrice,
-        });
+          gasPrice,
+        );
         if (cancel) return;
         setQuoteOut({
           wei: q.outAmountWei,
           formatted: fromWei(q.outAmountWei, outMeta.decimals),
+          venue: q.venue,
+          feeWei: q.feeTakenWei,
         });
       } catch (e: any) {
         if (!cancel) setQuoteError(e?.message || String(e));
