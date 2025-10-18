@@ -19,9 +19,9 @@
     "test": "vitest --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
-    "deploy:v2": "node scripts/deploy-silverback-v2.ts",
     "hh:compile": "hardhat compile",
-    "hh:verify:v2": "hardhat run scripts/hh-verify-v2.ts --network base"
+    "deploy:v2:sepolia": "hardhat run scripts/deploy-silverback-v2.ts --network base-sepolia",
+    "verify:v2:sepolia": "hardhat run scripts/hh-verify-v2.ts --network base-sepolia"
   },
   "dependencies": {
     "dotenv": "^17.2.1",
