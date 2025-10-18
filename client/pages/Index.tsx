@@ -202,6 +202,33 @@ export default function Index() {
     setToAmount(fromAmount);
   };
 
+  async function handleSwap() {
+    if (!isConnected || !address || !publicClient) return connectPreferred();
+    const router = unifiedRouterAddress();
+    if (!router) return setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
+    const inMeta = resolveMeta(fromToken);
+    const outMeta = resolveMeta(toToken);
+    if (!inMeta || !outMeta) return;
+    try {
+      setQuoteError(null);
+      const amountWei = toWei(fromAmount, inMeta.decimals);
+      if (amountWei <= 0n || !quoteOut?.wei) return;
+      await executeSwapViaOpenOcean(
+        publicClient,
+        writeContractAsync,
+        address,
+        router,
+        { address: inMeta.address, decimals: inMeta.decimals },
+        { address: outMeta.address, decimals: outMeta.decimals },
+        amountWei,
+        quoteOut.wei,
+        Math.round(slippage * 100),
+      );
+    } catch (e: any) {
+      setQuoteError(e?.shortMessage || e?.message || String(e));
+    }
+  }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
@@ -289,6 +316,7 @@ export default function Index() {
                 disabled={cta.disabled}
                 onClick={() => {
                   if (!isConnected) connectPreferred();
+                  else handleSwap();
                 }}
               >
                 {cta.label}
