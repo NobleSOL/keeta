@@ -1,31 +1,31 @@
 import hre from "hardhat";
 
 // Usage:
-//   pnpm hardhat run scripts/hh-verify-v2.ts --network base -- <factoryAddr> <routerAddr> <feeToSetter> <feeTo> <weth>
-// Example:
-//   pnpm hardhat run scripts/hh-verify-v2.ts --network base -- 0xF... 0xR... 0xDEPLOYER 0x360c2eB71dd6422AC1a69FbBCA278FFc2280f8F7 0x4200000000000000000000000000000000000006
+//   pnpm hardhat run scripts/hh-verify-v2.ts --network base-sepolia -- <factoryAddr> <routerAddr> <feeToSetter> <weth>
+// Notes:
+// - Factory constructor: (feeToSetter)
+// - feeTo is not a constructor arg in contractsV2; set via setFeeTo after deploy
 
 async function main() {
-  const [factoryAddr, routerAddr, feeToSetter, feeTo, weth] =
-    process.argv.slice(2);
-  if (!factoryAddr || !routerAddr || !feeToSetter || !feeTo || !weth) {
+  const [factoryAddr, routerAddr, feeToSetter, weth] = process.argv.slice(2);
+  if (!factoryAddr || !routerAddr || !feeToSetter || !weth) {
     throw new Error(
-      "Args: <factoryAddr> <routerAddr> <feeToSetter> <feeTo> <weth>",
+      "Args: <factoryAddr> <routerAddr> <feeToSetter> <weth>",
     );
   }
 
-  console.log("Verifying FactoryV2...", factoryAddr);
+  console.log("Verifying SilverbackFactory...", factoryAddr);
   await hre.run("verify:verify", {
     address: factoryAddr,
-    constructorArguments: [feeToSetter, feeTo],
-    contract: "contracts/SilverbackV2FactoryV2.sol:SilverbackV2FactoryV2",
+    constructorArguments: [feeToSetter],
+    contract: "contractsV2/SilverbackFactory.sol:SilverbackFactory",
   });
 
-  console.log("Verifying RouterV2...", routerAddr);
+  console.log("Verifying SilverbackRouter...", routerAddr);
   await hre.run("verify:verify", {
     address: routerAddr,
     constructorArguments: [factoryAddr, weth],
-    contract: "contracts/SilverbackV2RouterV2.sol:SilverbackV2RouterV2",
+    contract: "contractsV2/SilverbackRouter.sol:SilverbackRouter",
   });
 
   console.log("Done.");
