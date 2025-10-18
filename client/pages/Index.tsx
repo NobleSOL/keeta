@@ -41,6 +41,7 @@ export default function Index() {
 
   const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
+  const { writeContractAsync, isPending: isWriting } = useWriteContract();
 
   const connectPreferred = () => {
     const preferred =
@@ -51,7 +52,7 @@ export default function Index() {
   const cta = (() => {
     if (!isConnected)
       return { label: "Connect Wallet", disabled: false } as const;
-    if (canSwap) return { label: "Swap", disabled: false } as const;
+    if (canSwap) return { label: isWriting ? "Swapping..." : "Swap", disabled: isWriting } as const;
     return { label: "Enter an amount", disabled: true } as const;
   })();
 
