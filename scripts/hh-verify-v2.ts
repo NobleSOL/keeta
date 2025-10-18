@@ -9,9 +9,7 @@ import hre from "hardhat";
 async function main() {
   const [factoryAddr, routerAddr, feeToSetter, weth] = process.argv.slice(2);
   if (!factoryAddr || !routerAddr || !feeToSetter || !weth) {
-    throw new Error(
-      "Args: <factoryAddr> <routerAddr> <feeToSetter> <weth>",
-    );
+    throw new Error("Args: <factoryAddr> <routerAddr> <feeToSetter> <weth>");
   }
 
   console.log("Verifying SilverbackFactory...", factoryAddr);

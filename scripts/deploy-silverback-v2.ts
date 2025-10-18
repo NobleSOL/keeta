@@ -22,7 +22,7 @@ async function main() {
 
   // Deploy Factory
   const FactoryCF = await ethers.getContractFactory(
-    "contractsV2/SilverbackFactory.sol:SilverbackFactory"
+    "contractsV2/SilverbackFactory.sol:SilverbackFactory",
   );
   console.log("Deploying SilverbackFactory...", { feeToSetter: deployerAddr });
   const factory = await FactoryCF.deploy(deployerAddr);
@@ -39,7 +39,7 @@ async function main() {
 
   // Deploy Router
   const RouterCF = await ethers.getContractFactory(
-    "contractsV2/SilverbackRouter.sol:SilverbackRouter"
+    "contractsV2/SilverbackRouter.sol:SilverbackRouter",
   );
   console.log("Deploying SilverbackRouter...", { factory: factoryAddr, WETH });
   const router = await RouterCF.deploy(factoryAddr, WETH);
@@ -50,19 +50,21 @@ async function main() {
   // Output verify commands
   console.log("\nVerify commands:");
   console.log(
-    `pnpm hardhat verify --network ${hre.network.name} ${factoryAddr} ${deployerAddr}`
+    `pnpm hardhat verify --network ${hre.network.name} ${factoryAddr} ${deployerAddr}`,
   );
   if (feeToArg) {
-    console.log("Factory feeTo set via runtime tx; no constructor arg for feeTo");
+    console.log(
+      "Factory feeTo set via runtime tx; no constructor arg for feeTo",
+    );
   }
   console.log(
-    `pnpm hardhat verify --network ${hre.network.name} ${routerAddr} ${factoryAddr} ${WETH}`
+    `pnpm hardhat verify --network ${hre.network.name} ${routerAddr} ${factoryAddr} ${WETH}`,
   );
 
   console.log("\nFully-qualified names:");
   console.log(
     "Factory:",
-    "contractsV2/SilverbackFactory.sol:SilverbackFactory"
+    "contractsV2/SilverbackFactory.sol:SilverbackFactory",
   );
   console.log("Router:", "contractsV2/SilverbackRouter.sol:SilverbackRouter");
 }
