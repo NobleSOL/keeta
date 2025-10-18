@@ -1,83 +1,70 @@
-import { ethers } from "ethers";
-import fs from "fs";
-import path from "path";
+import hre from "hardhat";
+import { ethers } from "hardhat";
 
-// Usage:
-//   node scripts/deploy-silverback-v2.ts <RPC_URL> <PRIVATE_KEY> [WETH]
+// Usage examples:
+//   pnpm hardhat run scripts/deploy-silverback-v2.ts --network base-sepolia
+//   pnpm hardhat run scripts/deploy-silverback-v2.ts --network base-sepolia -- 0xWETH_ADDRESS 0xFEE_TO
 // Defaults:
-//   WETH (Base): 0x4200000000000000000000000000000000000006
+//   WETH (Base/Mainnet and Base/Sepolia): 0x4200000000000000000000000000000000000006
 // Notes:
-// - Compile the contracts with your toolchain (foundry/hardhat) so artifacts exist under
-//   artifacts/contracts/<Name>.sol/<Name>.json
-// - This script deploys:
-//   1) SilverbackV2FactoryV2(feeToSetter=deployer, initialFeeTo=FEE_WALLET)
-//   2) SilverbackV2RouterV2(factory, WETH)
-// - Prints verify arguments for BaseScan
+// - This deploys SilverbackFactory (feeToSetter=deployer) and SilverbackRouter (factory, WETH)
+// - If FEE_TO is provided, the script will set it on the factory
 
-const FEE_WALLET = "0x360c2eB71dd6422AC1a69FbBCA278FFc2280f8F7"; // protocol fee wallet
-const DEFAULT_WETH = "0x4200000000000000000000000000000000000006"; // Base WETH
-
-function readArtifact(name: string) {
-  const p = path.resolve(
-    __dirname,
-    `../artifacts/contracts/${name}.sol/${name}.json`,
-  );
-  return JSON.parse(fs.readFileSync(p, "utf8"));
-}
+const DEFAULT_WETH = "0x4200000000000000000000000000000000000006";
 
 async function main() {
-  const [rpcUrl, pk, wethArg] = process.argv.slice(2);
-  if (!rpcUrl || !pk) throw new Error("Args: <RPC_URL> <PRIVATE_KEY> [WETH]");
+  const [wethArg, feeToArg] = process.argv.slice(2);
   const WETH = wethArg || DEFAULT_WETH;
 
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const wallet = new ethers.Wallet(pk, provider);
+  const [deployer] = await ethers.getSigners();
+  const deployerAddr = await deployer.getAddress();
+  console.log("Deployer:", deployerAddr);
 
-  // Factory
-  const facArtifact = readArtifact("SilverbackV2FactoryV2");
-  const FactoryCF = new ethers.ContractFactory(
-    facArtifact.abi,
-    facArtifact.bytecode,
-    wallet,
+  // Deploy Factory
+  const FactoryCF = await ethers.getContractFactory(
+    "contractsV2/SilverbackFactory.sol:SilverbackFactory"
   );
-  console.log("Deploying SilverbackV2FactoryV2...", {
-    feeToSetter: await wallet.getAddress(),
-    initialFeeTo: FEE_WALLET,
-  });
-  const factory = await FactoryCF.deploy(await wallet.getAddress(), FEE_WALLET);
-  console.log("tx:", factory.deploymentTransaction()?.hash);
+  console.log("Deploying SilverbackFactory...", { feeToSetter: deployerAddr });
+  const factory = await FactoryCF.deploy(deployerAddr);
+  await factory.waitForDeployment();
   const factoryAddr = await factory.getAddress();
   console.log("Factory:", factoryAddr);
 
-  // Router
-  const rArtifact = readArtifact("SilverbackV2RouterV2");
-  const RouterCF = new ethers.ContractFactory(
-    rArtifact.abi,
-    rArtifact.bytecode,
-    wallet,
+  // Optionally set feeTo
+  if (feeToArg) {
+    console.log("Setting feeTo...", feeToArg);
+    const tx = await factory.setFeeTo(feeToArg);
+    await tx.wait();
+  }
+
+  // Deploy Router
+  const RouterCF = await ethers.getContractFactory(
+    "contractsV2/SilverbackRouter.sol:SilverbackRouter"
   );
-  console.log("Deploying SilverbackV2RouterV2...", {
-    factory: factoryAddr,
-    WETH,
-  });
+  console.log("Deploying SilverbackRouter...", { factory: factoryAddr, WETH });
   const router = await RouterCF.deploy(factoryAddr, WETH);
-  console.log("tx:", router.deploymentTransaction()?.hash);
+  await router.waitForDeployment();
   const routerAddr = await router.getAddress();
   console.log("Router:", routerAddr);
 
-  console.log("\nVerify commands (BaseScan):");
-  console.log("Factory:");
-  console.log("  Address:", factoryAddr);
+  // Output verify commands
+  console.log("\nVerify commands:");
   console.log(
-    "  Constructor args (JSON):",
-    JSON.stringify([await wallet.getAddress(), FEE_WALLET]),
+    `pnpm hardhat verify --network ${hre.network.name} ${factoryAddr} ${deployerAddr}`
   );
-  console.log("Router:");
-  console.log("  Address:", routerAddr);
+  if (feeToArg) {
+    console.log("Factory feeTo set via runtime tx; no constructor arg for feeTo");
+  }
   console.log(
-    "  Constructor args (JSON):",
-    JSON.stringify([factoryAddr, WETH]),
+    `pnpm hardhat verify --network ${hre.network.name} ${routerAddr} ${factoryAddr} ${WETH}`
   );
+
+  console.log("\nFully-qualified names:");
+  console.log(
+    "Factory:",
+    "contractsV2/SilverbackFactory.sol:SilverbackFactory"
+  );
+  console.log("Router:", "contractsV2/SilverbackRouter.sol:SilverbackRouter");
 }
 
 main().catch((e) => {
