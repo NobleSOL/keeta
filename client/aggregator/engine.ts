@@ -40,6 +40,7 @@ export type AggregatedQuote = {
   venue: string;
   outAmountWei: bigint;
   feeTakenWei: bigint; // protocol fee taken from input
+  priceImpact?: number; // percentage (e.g., 1.5 = 1.5%)
   details?: any;
 };
 
@@ -119,7 +120,23 @@ async function quoteLocalV2(
     const [reserveIn, reserveOut] =
       inAddr === token0 ? [r0, r1] : [r1, r0];
     const out = getAmountOutV2(netIn, reserveIn, reserveOut);
-    return { venue: "silverback-v2", outAmountWei: out, feeTakenWei: 0n };
+
+    // Calculate price impact
+    // Expected price (no slippage): reserveOut / reserveIn
+    // Actual price: out / netIn
+    // Impact = (1 - (actualPrice / expectedPrice)) * 100
+    const expectedPrice = (reserveOut * 10000n) / reserveIn;
+    const actualPrice = (out * 10000n) / netIn;
+    const priceImpact = expectedPrice > 0n
+      ? Number((10000n - (actualPrice * 10000n) / expectedPrice)) / 100
+      : 0;
+
+    return {
+      venue: "silverback-v2",
+      outAmountWei: out,
+      feeTakenWei: 0n,
+      priceImpact: Math.max(0, priceImpact), // Ensure non-negative
+    };
   } catch {
     return null;
   }

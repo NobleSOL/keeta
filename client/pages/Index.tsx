@@ -53,7 +53,18 @@ export default function Index() {
   const cta = (() => {
     if (!isConnected)
       return { label: "Connect Wallet", disabled: false } as const;
-    if (canSwap) return { label: isWriting ? "Swapping..." : "Swap", disabled: isWriting } as const;
+    if (swapStatus !== "idle") {
+      const statusLabels = {
+        checking: "Checking allowance...",
+        approving: "Approve in wallet...",
+        confirming: "Confirming approval...",
+        swapping: "Swap in wallet...",
+        waiting: "Confirming swap...",
+        idle: "Swap",
+      };
+      return { label: statusLabels[swapStatus], disabled: true } as const;
+    }
+    if (canSwap) return { label: isWriting ? "Processing..." : "Swap", disabled: isWriting } as const;
     return { label: "Enter an amount", disabled: true } as const;
   })();
 
@@ -64,11 +75,13 @@ export default function Index() {
     formatted: string;
     venue?: string;
     feeWei?: bigint;
+    priceImpact?: number;
   }>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
   const [toBalance, setToBalance] = useState<number | undefined>(undefined);
+  const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
 
   function resolveMeta(t: Token): {
     address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
@@ -119,9 +132,13 @@ export default function Index() {
           formatted: fromWei(q.outAmountWei, outMeta.decimals),
           venue: q.venue,
           feeWei: q.feeTakenWei,
+          priceImpact: q.priceImpact,
         });
       } catch (e: any) {
-        if (!cancel) setQuoteError(e?.message || String(e));
+        if (!cancel) {
+          const friendlyError = formatErrorMessage(e);
+          setQuoteError(friendlyError);
+        }
       } finally {
         if (!cancel) setQuoting(false);
       }
@@ -203,6 +220,54 @@ export default function Index() {
     setToAmount(fromAmount);
   };
 
+  // Get price impact styling and warning level
+  const getPriceImpactInfo = (impact: number | undefined) => {
+    if (!impact || impact < 0.01) return { color: "text-foreground", level: "none" };
+    if (impact < 1) return { color: "text-green-400", level: "low" };
+    if (impact < 5) return { color: "text-yellow-400", level: "medium" };
+    if (impact < 10) return { color: "text-orange-400", level: "high" };
+    return { color: "text-red-400", level: "critical" };
+  };
+
+  const priceImpactInfo = getPriceImpactInfo(quoteOut?.priceImpact);
+
+  // Translate technical errors into user-friendly messages
+  const formatErrorMessage = (error: any): string => {
+    const msg = error?.shortMessage || error?.message || String(error);
+
+    // Common error patterns
+    if (msg.includes("insufficient funds") || msg.includes("insufficient balance")) {
+      return "Insufficient balance. You don't have enough tokens to complete this swap.";
+    }
+    if (msg.includes("User rejected") || msg.includes("user rejected")) {
+      return "Transaction rejected. You cancelled the transaction in your wallet.";
+    }
+    if (msg.includes("allowance") || msg.includes("transfer amount exceeds allowance")) {
+      return "Approval required. Please approve the token spending first.";
+    }
+    if (msg.includes("INSUFFICIENT_OUTPUT_AMOUNT") || msg.includes("slippage")) {
+      return "Price moved too much. Try increasing your slippage tolerance or refreshing the quote.";
+    }
+    if (msg.includes("INSUFFICIENT_LIQUIDITY") || msg.includes("insufficient liquidity")) {
+      return "Not enough liquidity. This trading pair doesn't have sufficient liquidity for this trade size.";
+    }
+    if (msg.includes("EXPIRED") || msg.includes("deadline")) {
+      return "Transaction expired. The transaction took too long to process. Please try again.";
+    }
+    if (msg.includes("cannot estimate gas") || msg.includes("gas required exceeds")) {
+      return "Transaction will likely fail. Please check your token balances and approvals.";
+    }
+    if (msg.includes("nonce too low")) {
+      return "Transaction conflict. Please wait for pending transactions to complete.";
+    }
+    if (msg.includes("network") || msg.includes("fetch failed")) {
+      return "Network error. Please check your internet connection and try again.";
+    }
+
+    // If no pattern matches, return a cleaned version
+    return msg.length > 150 ? msg.substring(0, 150) + "..." : msg;
+  };
+
   async function handleSwap() {
     if (!isConnected || !address || !publicClient) return connectPreferred();
     const inMeta = resolveMeta(fromToken);
@@ -210,6 +275,7 @@ export default function Index() {
     if (!inMeta || !outMeta) return;
     try {
       setQuoteError(null);
+      setSwapStatus("checking");
       const amountWei = toWei(fromAmount, inMeta.decimals);
       if (amountWei <= 0n || !quoteOut?.wei) return;
 
@@ -217,6 +283,7 @@ export default function Index() {
 
       // Route based on venue
       if (quoteOut.venue === "silverback-v2") {
+        setSwapStatus("swapping");
         // Direct V2 swap (testnet-friendly, no OpenOcean dependency)
         toast({
           title: "Swapping via Silverback V2",
@@ -239,9 +306,11 @@ export default function Index() {
         const router = unifiedRouterAddress();
         if (!router) {
           setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
+          setSwapStatus("idle");
           return;
         }
 
+        setSwapStatus("swapping");
         toast({
           title: "Swapping via OpenOcean",
           description: "Confirm the transaction in your wallet...",
@@ -262,6 +331,7 @@ export default function Index() {
       }
 
       // Show pending toast
+      setSwapStatus("waiting");
       const explorerUrl = `https://sepolia.basescan.org/tx/${txHash}`;
       toast({
         title: "Transaction Submitted",
@@ -294,18 +364,15 @@ export default function Index() {
       // Clear inputs
       setFromAmount("");
       setToAmount("");
+      setSwapStatus("idle");
     } catch (e: any) {
-      const errorMsg = e?.shortMessage || e?.message || String(e);
+      const errorMsg = formatErrorMessage(e);
       console.error("Swap error:", e);
       setQuoteError(errorMsg);
+      setSwapStatus("idle");
       toast({
         title: "Swap Failed",
-        description: (
-          <div className="flex flex-col gap-1 max-w-sm">
-            <span className="break-words">{errorMsg}</span>
-            {e?.cause && <span className="text-xs opacity-75">Cause: {String(e.cause)}</span>}
-          </div>
-        ),
+        description: errorMsg,
         variant: "destructive",
       });
     }
@@ -386,12 +453,68 @@ export default function Index() {
                       : "–"}
                   </span>
                 </div>
+                {quoteOut?.priceImpact !== undefined && (
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-muted-foreground">Price Impact</span>
+                    <span className={priceImpactInfo.color}>
+                      {quoteOut.priceImpact < 0.01 ? "<0.01%" : `${quoteOut.priceImpact.toFixed(2)}%`}
+                    </span>
+                  </div>
+                )}
+                {quoteOut?.venue && (
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-muted-foreground">Route</span>
+                    <span className="flex items-center gap-1.5">
+                      {quoteOut.venue === "silverback-v2" ? (
+                        <>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 font-medium">
+                            Silverback V2
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-medium">
+                            OpenOcean
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                )}
                 {quoteError && (
                   <div className="mt-2 text-xs text-red-400 break-words">
                     {quoteError}
                   </div>
                 )}
               </div>
+
+              {/* Price Impact Warning Banner */}
+              {priceImpactInfo.level === "high" && (
+                <div className="mt-3 rounded-xl border border-orange-400/40 bg-orange-400/10 p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-orange-400 text-lg">⚠</span>
+                    <div>
+                      <div className="font-semibold text-orange-400">High Price Impact</div>
+                      <div className="text-xs text-orange-300/80 mt-1">
+                        This trade will move the market price significantly. Consider splitting into smaller trades.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {priceImpactInfo.level === "critical" && (
+                <div className="mt-3 rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-400 text-lg">🚨</span>
+                    <div>
+                      <div className="font-semibold text-red-400">Critical Price Impact</div>
+                      <div className="text-xs text-red-300/80 mt-1">
+                        This trade has extremely high price impact (&gt;10%). You may lose a significant portion of your funds. Please review carefully.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <Button
                 className="mt-4 h-12 w-full bg-brand text-white hover:bg-brand/90"

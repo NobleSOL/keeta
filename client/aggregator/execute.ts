@@ -57,8 +57,10 @@ export async function ensureAllowance(
   owner: Address,
   spender: Address,
   needed: bigint,
+  onStatusChange?: (status: "checking" | "approving" | "confirming" | "complete") => void,
 ) {
   try {
+    onStatusChange?.("checking");
     const current = (await pc.readContract({
       address: token,
       abi: ERC20_ABI,
@@ -68,6 +70,7 @@ export async function ensureAllowance(
     console.log(`🔍 Current allowance: ${current.toString()}, needed: ${needed.toString()}`);
     if (current >= needed) {
       console.log("✅ Sufficient allowance already exists");
+      onStatusChange?.("complete");
       return;
     }
   } catch (e) {
@@ -75,6 +78,7 @@ export async function ensureAllowance(
   }
 
   console.log("📝 Requesting token approval...");
+  onStatusChange?.("approving");
   const hash = await writeContractAsync({
     address: token,
     abi: ERC20_ABI,
@@ -83,8 +87,10 @@ export async function ensureAllowance(
   });
 
   console.log(`⏳ Waiting for approval transaction: ${hash}`);
+  onStatusChange?.("confirming");
   await pc.waitForTransactionReceipt({ hash: hash as `0x${string}` });
   console.log("✅ Approval confirmed");
+  onStatusChange?.("complete");
 }
 
 function applyFee(amountIn: bigint): { net: bigint } {
