@@ -105,6 +105,43 @@ export default function Index() {
     return null;
   }
 
+  // Translate technical errors into user-friendly messages
+  const formatErrorMessage = (error: any): string => {
+    const msg = error?.shortMessage || error?.message || String(error);
+
+    // Common error patterns
+    if (msg.includes("insufficient funds") || msg.includes("insufficient balance")) {
+      return "Insufficient balance. You don't have enough tokens to complete this swap.";
+    }
+    if (msg.includes("User rejected") || msg.includes("user rejected")) {
+      return "Transaction rejected. You cancelled the transaction in your wallet.";
+    }
+    if (msg.includes("allowance") || msg.includes("transfer amount exceeds allowance")) {
+      return "Approval required. Please approve the token spending first.";
+    }
+    if (msg.includes("INSUFFICIENT_OUTPUT_AMOUNT") || msg.includes("slippage")) {
+      return "Price moved too much. Try increasing your slippage tolerance or refreshing the quote.";
+    }
+    if (msg.includes("INSUFFICIENT_LIQUIDITY") || msg.includes("insufficient liquidity")) {
+      return "Not enough liquidity. This trading pair doesn't have sufficient liquidity for this trade size.";
+    }
+    if (msg.includes("EXPIRED") || msg.includes("deadline")) {
+      return "Transaction expired. The transaction took too long to process. Please try again.";
+    }
+    if (msg.includes("cannot estimate gas") || msg.includes("gas required exceeds")) {
+      return "Transaction will likely fail. Please check your token balances and approvals.";
+    }
+    if (msg.includes("nonce too low")) {
+      return "Transaction conflict. Please wait for pending transactions to complete.";
+    }
+    if (msg.includes("network") || msg.includes("fetch failed")) {
+      return "Network error. Please check your internet connection and try again.";
+    }
+
+    // If no pattern matches, return a cleaned version
+    return msg.length > 150 ? msg.substring(0, 150) + "..." : msg;
+  };
+
   useEffect(() => {
     let cancel = false;
     async function run() {
@@ -230,43 +267,6 @@ export default function Index() {
   };
 
   const priceImpactInfo = getPriceImpactInfo(quoteOut?.priceImpact);
-
-  // Translate technical errors into user-friendly messages
-  const formatErrorMessage = (error: any): string => {
-    const msg = error?.shortMessage || error?.message || String(error);
-
-    // Common error patterns
-    if (msg.includes("insufficient funds") || msg.includes("insufficient balance")) {
-      return "Insufficient balance. You don't have enough tokens to complete this swap.";
-    }
-    if (msg.includes("User rejected") || msg.includes("user rejected")) {
-      return "Transaction rejected. You cancelled the transaction in your wallet.";
-    }
-    if (msg.includes("allowance") || msg.includes("transfer amount exceeds allowance")) {
-      return "Approval required. Please approve the token spending first.";
-    }
-    if (msg.includes("INSUFFICIENT_OUTPUT_AMOUNT") || msg.includes("slippage")) {
-      return "Price moved too much. Try increasing your slippage tolerance or refreshing the quote.";
-    }
-    if (msg.includes("INSUFFICIENT_LIQUIDITY") || msg.includes("insufficient liquidity")) {
-      return "Not enough liquidity. This trading pair doesn't have sufficient liquidity for this trade size.";
-    }
-    if (msg.includes("EXPIRED") || msg.includes("deadline")) {
-      return "Transaction expired. The transaction took too long to process. Please try again.";
-    }
-    if (msg.includes("cannot estimate gas") || msg.includes("gas required exceeds")) {
-      return "Transaction will likely fail. Please check your token balances and approvals.";
-    }
-    if (msg.includes("nonce too low")) {
-      return "Transaction conflict. Please wait for pending transactions to complete.";
-    }
-    if (msg.includes("network") || msg.includes("fetch failed")) {
-      return "Network error. Please check your internet connection and try again.";
-    }
-
-    // If no pattern matches, return a cleaned version
-    return msg.length > 150 ? msg.substring(0, 150) + "..." : msg;
-  };
 
   async function handleSwap() {
     if (!isConnected || !address || !publicClient) return connectPreferred();
