@@ -1,7 +1,7 @@
 {
-  "name": "fusion-starter",
+  "name": "dex",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
   "pkg": {
     "assets": [
       "dist/spa/*"
@@ -24,7 +24,7 @@
     "verify:v2:sepolia": "hardhat run scripts/hh-verify-v2.ts --network base-sepolia"
   },
   "dependencies": {
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -35,8 +35,15 @@
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.2.1",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.10",
+    "@nomicfoundation/hardhat-ignition": "^0.15.13",
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.14",
+    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@nomicfoundation/hardhat-verify": "^2.0.8",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@nomicfoundation/ignition-core": "^0.15.13",
+    "@openzeppelin/contracts": "^5.4.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -69,9 +76,12 @@
     "@swc/core": "^1.13.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.84.2",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/node": "^24.2.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.8.1",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "@types/three": "^0.176.0",
@@ -86,7 +96,8 @@
     "ethers": "^6.13.0",
     "framer-motion": "^12.23.12",
     "globals": "^16.3.0",
-    "hardhat": "^2.22.12",
+    "hardhat": "^2.26.3",
+    "hardhat-gas-reporter": "^1.0.10",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.539.0",
     "next-themes": "^0.4.6",
@@ -97,16 +108,19 @@
     "react-resizable-panels": "^3.0.4",
     "recharts": "^2.12.7",
     "serverless-http": "^3.2.0",
+    "solidity-coverage": "^0.8.16",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.176.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.9.2",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^5.9.3",
     "vaul": "^1.1.2",
     "vite": "^7.1.2",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
+  "type": "module"
 }

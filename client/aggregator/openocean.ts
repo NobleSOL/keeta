@@ -75,9 +75,18 @@ export async function fetchOpenOceanSwapBase({
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`OpenOcean swap build failed: ${res.status} ${text}`);
+    throw new Error(`OpenOcean API error (${res.status}): ${text}`);
   }
   const json = await res.json();
+
+  // Debug log to see actual response
+  console.log("OpenOcean swap response:", json);
+
+  // Handle error responses from OpenOcean
+  if (json.code !== 200 && json.code !== undefined) {
+    throw new Error(`OpenOcean: ${json.error || json.message || 'Unknown error'}`);
+  }
+
   const data = json?.data || json;
   const to = (data?.to || data?.tx?.to) as `0x${string}`;
   const dataHex = (data?.data || data?.tx?.data) as `0x${string}`;
@@ -85,7 +94,16 @@ export async function fetchOpenOceanSwapBase({
   const outAmount = BigInt(
     data?.outAmount || data?.toAmount || data?.amountOut || 0,
   );
-  if (!to || !dataHex) throw new Error("OpenOcean swap build missing to/data");
+
+  if (!to || !dataHex) {
+    console.error("OpenOcean response missing fields:", {
+      to,
+      dataHex,
+      fullResponse: json
+    });
+    throw new Error("OpenOcean: No liquidity found or testnet not supported. Try using Silverback V2 pairs.");
+  }
+
   const value = (() => {
     try {
       return BigInt(valueRaw);

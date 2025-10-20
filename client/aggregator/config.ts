@@ -8,7 +8,7 @@ export type AggSource = (typeof AGG_SOURCES)[number];
 
 export const FEE_BPS = 30; // 0.3%
 export const FEE_RECIPIENT =
-  "0x360c2eB71dd6422AC1a69FbBCA278FFc2280f8F7" as const;
+  "0x1C0eF1d9a53753CcE3eC062F8FE46E153B982645" as const;
 export const FEE_ASSET = "ETH" as const; // fee paid in ETH
 export const FEE_MODE = "deduct_before_swap" as const; // deduct fee first, then execute swap
 

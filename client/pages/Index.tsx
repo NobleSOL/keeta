@@ -12,8 +12,9 @@ import { toWei, fromWei } from "@/aggregator/openocean";
 import { getBestAggregatedQuote } from "@/aggregator/engine";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
-import { base } from "viem/chains";
-import { executeSwapViaOpenOcean, unifiedRouterAddress } from "@/aggregator/execute";
+import { baseSepolia } from "viem/chains";
+import { executeSwapViaOpenOcean, executeSwapViaSilverbackV2, unifiedRouterAddress } from "@/aggregator/execute";
+import { toast } from "@/hooks/use-toast";
 
 const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => ({
   ...tokenBySymbol(sym),
@@ -46,7 +47,7 @@ export default function Index() {
   const connectPreferred = () => {
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
-    if (preferred) connect({ connector: preferred, chainId: base.id });
+    if (preferred) connect({ connector: preferred, chainId: baseSepolia.id });
   };
 
   const cta = (() => {
@@ -204,8 +205,6 @@ export default function Index() {
 
   async function handleSwap() {
     if (!isConnected || !address || !publicClient) return connectPreferred();
-    const router = unifiedRouterAddress();
-    if (!router) return setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
     const inMeta = resolveMeta(fromToken);
     const outMeta = resolveMeta(toToken);
     if (!inMeta || !outMeta) return;
@@ -213,19 +212,102 @@ export default function Index() {
       setQuoteError(null);
       const amountWei = toWei(fromAmount, inMeta.decimals);
       if (amountWei <= 0n || !quoteOut?.wei) return;
-      await executeSwapViaOpenOcean(
-        publicClient,
-        writeContractAsync,
-        address,
-        router,
-        { address: inMeta.address, decimals: inMeta.decimals },
-        { address: outMeta.address, decimals: outMeta.decimals },
-        amountWei,
-        quoteOut.wei,
-        Math.round(slippage * 100),
-      );
+
+      let txHash: string;
+
+      // Route based on venue
+      if (quoteOut.venue === "silverback-v2") {
+        // Direct V2 swap (testnet-friendly, no OpenOcean dependency)
+        toast({
+          title: "Swapping via Silverback V2",
+          description: "Confirm the transaction in your wallet...",
+        });
+
+        const result = await executeSwapViaSilverbackV2(
+          publicClient,
+          writeContractAsync,
+          address,
+          { address: inMeta.address, decimals: inMeta.decimals },
+          { address: outMeta.address, decimals: outMeta.decimals },
+          amountWei,
+          quoteOut.wei,
+          Math.round(slippage * 100),
+        );
+        txHash = result.txHash;
+      } else {
+        // OpenOcean aggregated swap
+        const router = unifiedRouterAddress();
+        if (!router) {
+          setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
+          return;
+        }
+
+        toast({
+          title: "Swapping via OpenOcean",
+          description: "Confirm the transaction in your wallet...",
+        });
+
+        const result = await executeSwapViaOpenOcean(
+          publicClient,
+          writeContractAsync,
+          address,
+          router,
+          { address: inMeta.address, decimals: inMeta.decimals },
+          { address: outMeta.address, decimals: outMeta.decimals },
+          amountWei,
+          quoteOut.wei,
+          Math.round(slippage * 100),
+        );
+        txHash = result.txHash;
+      }
+
+      // Show pending toast
+      const explorerUrl = `https://sepolia.basescan.org/tx/${txHash}`;
+      toast({
+        title: "Transaction Submitted",
+        description: (
+          <div className="flex flex-col gap-1">
+            <span>Waiting for confirmation...</span>
+            <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 underline text-xs">
+              View on Basescan
+            </a>
+          </div>
+        ),
+      });
+
+      // Wait for confirmation
+      await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+
+      // Show success toast
+      toast({
+        title: "Swap Successful!",
+        description: (
+          <div className="flex flex-col gap-1">
+            <span>Your swap completed successfully</span>
+            <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 underline text-xs">
+              View on Basescan
+            </a>
+          </div>
+        ),
+      });
+
+      // Clear inputs
+      setFromAmount("");
+      setToAmount("");
     } catch (e: any) {
-      setQuoteError(e?.shortMessage || e?.message || String(e));
+      const errorMsg = e?.shortMessage || e?.message || String(e);
+      console.error("Swap error:", e);
+      setQuoteError(errorMsg);
+      toast({
+        title: "Swap Failed",
+        description: (
+          <div className="flex flex-col gap-1 max-w-sm">
+            <span className="break-words">{errorMsg}</span>
+            {e?.cause && <span className="text-xs opacity-75">Cause: {String(e.cause)}</span>}
+          </div>
+        ),
+        variant: "destructive",
+      });
     }
   }
 

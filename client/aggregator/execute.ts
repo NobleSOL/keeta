@@ -1,5 +1,5 @@
 import { PublicClient } from "viem";
-import { base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { DEFAULT_DEADLINE_SEC, FEE_BPS } from "@/aggregator/config";
 import { ERC20_ABI } from "@/lib/erc20";
 import {
@@ -65,21 +65,161 @@ export async function ensureAllowance(
       functionName: "allowance",
       args: [owner, spender],
     })) as bigint;
-    if (current >= needed) return;
-  } catch {
-    // Proceed to try approve anyway
+    console.log(`🔍 Current allowance: ${current.toString()}, needed: ${needed.toString()}`);
+    if (current >= needed) {
+      console.log("✅ Sufficient allowance already exists");
+      return;
+    }
+  } catch (e) {
+    console.warn("⚠️  Could not read allowance:", e);
   }
-  await writeContractAsync({
+
+  console.log("📝 Requesting token approval...");
+  const hash = await writeContractAsync({
     address: token,
     abi: ERC20_ABI,
     functionName: "approve",
     args: [spender, needed],
   });
+
+  console.log(`⏳ Waiting for approval transaction: ${hash}`);
+  await pc.waitForTransactionReceipt({ hash: hash as `0x${string}` });
+  console.log("✅ Approval confirmed");
 }
 
 function applyFee(amountIn: bigint): { net: bigint } {
   const fee = (amountIn * BigInt(FEE_BPS)) / 10_000n;
   return { net: amountIn - fee };
+}
+
+const UNIFIED_ROUTER_V2_ABI = [
+  {
+    type: "function",
+    name: "swapExactTokensForTokens",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMin", type: "uint256" },
+      { name: "path", type: "address[]" },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+  {
+    type: "function",
+    name: "swapExactETHForTokens",
+    stateMutability: "payable",
+    inputs: [
+      { name: "amountOutMin", type: "uint256" },
+      { name: "path", type: "address[]" },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+  {
+    type: "function",
+    name: "swapExactTokensForETH",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMin", type: "uint256" },
+      { name: "path", type: "address[]" },
+      { name: "to", type: "address" },
+      { name: "deadline", type: "uint256" },
+    ],
+    outputs: [{ name: "amounts", type: "uint256[]" }],
+  },
+] as const;
+
+const WETH_ADDRESS = "0x4200000000000000000000000000000000000006" as Address;
+
+export function v2RouterAddress(): Address | null {
+  const v = (import.meta as any).env?.VITE_SB_V2_ROUTER as string | undefined;
+  if (!v || !/^0x[a-fA-F0-9]{40}$/.test(v)) return null;
+  return v as Address;
+}
+
+export async function executeSwapViaSilverbackV2(
+  pc: PublicClient,
+  writeContractAsync: (args: any) => Promise<any>,
+  account: Address,
+  inToken: TokenMeta,
+  outToken: TokenMeta,
+  amountIn: bigint,
+  quotedOut: bigint,
+  slippageBps: number,
+): Promise<{ txHash: string }> {
+  // Use UnifiedRouter for fee collection
+  const router = unifiedRouterAddress();
+  console.log("🔍 Using UnifiedRouter address:", router);
+  if (!router) throw new Error("Set VITE_SB_UNIFIED_ROUTER env to the deployed UnifiedRouter address");
+
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + DEFAULT_DEADLINE_SEC);
+  const isNativeIn = inToken.address === NATIVE_SENTINEL;
+  const isNativeOut = outToken.address === NATIVE_SENTINEL;
+
+  // Convert native sentinel to WETH for path
+  const inAddr = isNativeIn ? WETH_ADDRESS : (inToken.address as Address);
+  const outAddr = isNativeOut ? WETH_ADDRESS : (outToken.address as Address);
+  const path = [inAddr, outAddr];
+
+  // UnifiedRouter collects 0.3% fee automatically and routes through V2
+  // We pass full amount - router deducts fee internally
+
+  // Calculate minOut with slippage (applied to quoted output)
+  const minOut = (quotedOut * BigInt(10_000 - slippageBps)) / 10_000n;
+
+  let hash: string;
+
+  if (isNativeIn) {
+    // ETH -> Token swap
+    hash = await writeContractAsync({
+      address: router,
+      abi: UNIFIED_ROUTER_V2_ABI,
+      functionName: "swapExactETHForTokens",
+      args: [minOut, path, account, deadline],
+      value: amountIn, // Full amount (no fee deduction)
+      chainId: baseSepolia.id,
+    });
+  } else if (isNativeOut) {
+    // Token -> ETH swap
+    const inAddrForContract = inToken.address as Address;
+    console.log("🔄 Token->ETH swap params:", {
+      router,
+      token: inAddrForContract,
+      amountIn: amountIn.toString(),
+      minOut: minOut.toString(),
+      path,
+      account,
+      deadline: deadline.toString(),
+    });
+
+    await ensureAllowance(pc, writeContractAsync, inAddrForContract, account, router, amountIn);
+
+    hash = await writeContractAsync({
+      address: router,
+      abi: UNIFIED_ROUTER_V2_ABI,
+      functionName: "swapExactTokensForETH",
+      args: [amountIn, minOut, path, account, deadline],
+      chainId: baseSepolia.id,
+    });
+  } else {
+    // Token -> Token swap
+    const inAddrForContract = inToken.address as Address;
+    await ensureAllowance(pc, writeContractAsync, inAddrForContract, account, router, amountIn);
+
+    hash = await writeContractAsync({
+      address: router,
+      abi: UNIFIED_ROUTER_V2_ABI,
+      functionName: "swapExactTokensForTokens",
+      args: [amountIn, minOut, path, account, deadline],
+      chainId: baseSepolia.id,
+    });
+  }
+
+  return { txHash: hash as string };
 }
 
 export async function executeSwapViaOpenOcean(
@@ -92,17 +232,28 @@ export async function executeSwapViaOpenOcean(
   amountIn: bigint,
   quotedOut: bigint,
   slippageBps: number,
-): Promise<{ txHash: string; oo: SwapBuildResult }> {
+): Promise<{ txHash: string; oo: SwapBuildResult | null }> {
   const gasPriceWei = await pc.getGasPrice();
   const { net } = applyFee(amountIn);
-  const oo = await fetchOpenOceanSwapBase({
-    inTokenAddress: inToken.address,
-    outTokenAddress: outToken.address,
-    amountWei: net,
-    slippageBps,
-    account,
-    gasPriceWei,
-  });
+
+  let oo: SwapBuildResult;
+  try {
+    oo = await fetchOpenOceanSwapBase({
+      inTokenAddress: inToken.address,
+      outTokenAddress: outToken.address,
+      amountWei: net,
+      slippageBps,
+      account,
+      gasPriceWei,
+    });
+  } catch (error: any) {
+    // OpenOcean might not support testnet - provide helpful error
+    throw new Error(
+      "OpenOcean aggregation unavailable (testnet not supported). " +
+      "Please use tokens with Silverback V2 liquidity pools instead. " +
+      "Original error: " + error.message
+    );
+  }
 
   const minOut = (quotedOut * BigInt(10_000 - slippageBps)) / 10_000n;
   const deadline = BigInt(Math.floor(Date.now() / 1000) + DEFAULT_DEADLINE_SEC);
@@ -131,7 +282,7 @@ export async function executeSwapViaOpenOcean(
       },
     ],
     value: isNative ? amountIn : 0n,
-    chainId: base.id,
+    chainId: baseSepolia.id,
   });
 
   return { txHash: hash as string, oo };

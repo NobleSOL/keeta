@@ -1,12 +1,12 @@
 import { http, createConfig } from "wagmi";
-import { base, mainnet } from "viem/chains";
+import { base, baseSepolia, mainnet } from "viem/chains";
 import { injected, coinbaseWallet, walletConnect } from "wagmi/connectors";
 
 const wcId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as
   | string
   | undefined;
 const baseRpc =
-  (import.meta as any).env?.VITE_BASE_RPC_URL || "https://mainnet.base.org";
+  (import.meta as any).env?.VITE_BASE_RPC_URL || "https://base-sepolia-rpc.publicnode.com";
 
 const appOrigin = typeof window !== "undefined" ? window.location.origin : "";
 const appName = "Silverback DEX";
@@ -44,9 +44,10 @@ const enableCoinbase =
   cbAllowed.length > 0 && appOrigin && cbAllowed.includes(appOrigin);
 
 export const wagmiConfig = createConfig({
-  chains: [base, mainnet],
+  chains: [baseSepolia, base, mainnet],
   transports: {
-    [base.id]: http(baseRpc),
+    [baseSepolia.id]: http(baseRpc),
+    [base.id]: http(),
     [mainnet.id]: http(),
   },
   connectors: [

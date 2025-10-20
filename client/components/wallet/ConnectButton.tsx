@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 
 function truncate(addr?: string) {
   if (!addr) return "";
@@ -51,7 +51,7 @@ export default function ConnectButton() {
       connectors.find((c) => c.id === "injected") ??
       connectors[0];
     try {
-      if (preferred) await connect({ connector: preferred, chainId: base.id });
+      if (preferred) await connect({ connector: preferred, chainId: baseSepolia.id });
     } catch (_e) {
       setOpen(true);
     }
@@ -73,7 +73,7 @@ export default function ConnectButton() {
               )}
               disabled={!c.ready}
               onClick={() => {
-                connect({ connector: c, chainId: base.id });
+                connect({ connector: c, chainId: baseSepolia.id });
                 setOpen(false);
               }}
             >

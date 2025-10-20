@@ -69,6 +69,13 @@ async function quoteLocalV2(
   const addrs = v2Addresses();
   if (!addrs) return null;
   try {
+    // Convert ETH sentinel to WETH for pair lookup
+    const WETH_ADDRESS = "0x4200000000000000000000000000000000000006" as `0x${string}`;
+    const NATIVE_SENTINEL = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+
+    const inAddr = inToken.address === NATIVE_SENTINEL ? WETH_ADDRESS : (inToken.address as `0x${string}`);
+    const outAddr = outToken.address === NATIVE_SENTINEL ? WETH_ADDRESS : (outToken.address as `0x${string}`);
+
     const pair = (await pc.readContract({
       address: addrs.factory,
       abi: [
@@ -84,13 +91,12 @@ async function quoteLocalV2(
         },
       ] as const,
       functionName: "getPair",
-      args: [
-        inToken.address as `0x${string}`,
-        outToken.address as `0x${string}`,
-      ],
+      args: [inAddr, outAddr],
     })) as `0x${string}`;
+
     if (!pair || pair === "0x0000000000000000000000000000000000000000")
       return null;
+
     const [token0, token1] = await Promise.all([
       pc.readContract({
         address: pair,
@@ -103,13 +109,15 @@ async function quoteLocalV2(
         functionName: "token1",
       }) as Promise<`0x${string}`>,
     ]);
+
     const [r0, r1] = (await pc.readContract({
       address: pair,
       abi: PAIR_ABI,
       functionName: "getReserves",
     })) as any as [bigint, bigint, number];
+
     const [reserveIn, reserveOut] =
-      inToken.address === token0 ? [r0, r1] : [r1, r0];
+      inAddr === token0 ? [r0, r1] : [r1, r0];
     const out = getAmountOutV2(netIn, reserveIn, reserveOut);
     return { venue: "silverback-v2", outAmountWei: out, feeTakenWei: 0n };
   } catch {
