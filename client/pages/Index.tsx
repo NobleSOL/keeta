@@ -68,6 +68,8 @@ export default function Index() {
     return { label: "Enter an amount", disabled: true } as const;
   })();
 
+  const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
+
   const { data: remoteTokens } = useTokenList();
   const publicClient = usePublicClient();
   const [quoteOut, setQuoteOut] = useState<null | {
@@ -81,7 +83,6 @@ export default function Index() {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
   const [toBalance, setToBalance] = useState<number | undefined>(undefined);
-  const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
 
   function resolveMeta(t: Token): {
     address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
