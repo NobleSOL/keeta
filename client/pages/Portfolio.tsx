@@ -363,7 +363,7 @@ export default function Portfolio() {
       const liquidityToRemove = (position.lpBalance * BigInt(percentage)) / 100n;
 
       // Fetch fresh reserves to calculate correct minimum amounts
-      const [reserves] = await publicClient.readContract({
+      const reserves = await publicClient.readContract({
         address: position.pairAddress as `0x${string}`,
         abi: PAIR_ABI,
         functionName: "getReserves",
@@ -376,8 +376,10 @@ export default function Portfolio() {
       }) as bigint;
 
       // Calculate expected amounts based on current reserves
-      const amount0Expected = (liquidityToRemove * reserves[0]) / totalSupply;
-      const amount1Expected = (liquidityToRemove * reserves[1]) / totalSupply;
+      const reserve0 = BigInt(reserves[0]);
+      const reserve1 = BigInt(reserves[1]);
+      const amount0Expected = (liquidityToRemove * reserve0) / totalSupply;
+      const amount1Expected = (liquidityToRemove * reserve1) / totalSupply;
 
       // Apply 1% slippage to expected amounts (more conservative)
       const amount0Min = (amount0Expected * 99n) / 100n;
