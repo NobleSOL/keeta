@@ -57,6 +57,7 @@ export default function Pool() {
   const [pairAddress, setPairAddress] = useState<string | null>(null);
   const [reserves, setReserves] = useState<{ reserveA: bigint; reserveB: bigint } | null>(null);
   const [lastEditedField, setLastEditedField] = useState<"A" | "B">("A");
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
   const [slippage, setSlippage] = useState<number>(() => {
     const v =
       typeof window !== "undefined"
@@ -168,7 +169,7 @@ export default function Pool() {
     return () => {
       cancel = true;
     };
-  }, [tokenA, tokenB, publicClient, version]);
+  }, [tokenA, tokenB, publicClient, version, refetchTrigger]);
 
   // Fetch balances
   useEffect(() => {
@@ -287,9 +288,10 @@ export default function Pool() {
         const amtAWei = BigInt(Math.floor(Number(amtA) * 10 ** decA));
         const amtBWei = BigInt(Math.floor(Number(amtB) * 10 ** decB));
 
-        // Calculate min amounts with slippage
-        const minA = (amtAWei * BigInt(Math.floor((100 - slippage) * 100))) / 10000n;
-        const minB = (amtBWei * BigInt(Math.floor((100 - slippage) * 100))) / 10000n;
+        // Calculate min amounts with slippage + 0.1% buffer for rounding
+        const slippageWithBuffer = slippage + 0.1;
+        const minA = (amtAWei * BigInt(Math.floor((100 - slippageWithBuffer) * 100))) / 10000n;
+        const minB = (amtBWei * BigInt(Math.floor((100 - slippageWithBuffer) * 100))) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1200); // 20 min
 
         // Approve tokens first if needed
@@ -438,6 +440,9 @@ export default function Pool() {
         });
 
         await publicClient.waitForTransactionReceipt({ hash: liquidityHash as `0x${string}` });
+
+        // Refetch reserves after successful liquidity add
+        setRefetchTrigger((prev) => prev + 1);
 
         toast({
           title: "Success!",

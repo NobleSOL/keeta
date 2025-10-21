@@ -381,9 +381,20 @@ export default function Portfolio() {
       const amount0Expected = (liquidityToRemove * reserve0) / totalSupply;
       const amount1Expected = (liquidityToRemove * reserve1) / totalSupply;
 
-      // Apply 1% slippage to expected amounts (more conservative)
-      const amount0Min = (amount0Expected * 99n) / 100n;
-      const amount1Min = (amount1Expected * 99n) / 100n;
+      // Apply 5% slippage to expected amounts
+      const amount0Min = (amount0Expected * 95n) / 100n;
+      const amount1Min = (amount1Expected * 95n) / 100n;
+
+      console.log("Liquidity removal calculation:", {
+        liquidityToRemove: liquidityToRemove.toString(),
+        totalSupply: totalSupply.toString(),
+        reserve0: reserve0.toString(),
+        reserve1: reserve1.toString(),
+        amount0Expected: amount0Expected.toString(),
+        amount1Expected: amount1Expected.toString(),
+        amount0Min: amount0Min.toString(),
+        amount1Min: amount1Min.toString(),
+      });
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 minutes
 
       // Approve router to spend LP tokens
