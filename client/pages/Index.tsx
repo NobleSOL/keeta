@@ -44,13 +44,15 @@ export default function Index() {
   const { connectors, connect } = useConnect();
   const { writeContractAsync, isPending: isWriting } = useWriteContract();
 
+  const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
+
   const connectPreferred = () => {
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
     if (preferred) connect({ connector: preferred, chainId: baseSepolia.id });
   };
 
-  const cta = (() => {
+  const cta = useMemo(() => {
     if (!isConnected)
       return { label: "Connect Wallet", disabled: false } as const;
     if (swapStatus !== "idle") {
@@ -66,9 +68,7 @@ export default function Index() {
     }
     if (canSwap) return { label: isWriting ? "Processing..." : "Swap", disabled: isWriting } as const;
     return { label: "Enter an amount", disabled: true } as const;
-  })();
-
-  const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
+  }, [isConnected, swapStatus, canSwap, isWriting]);
 
   const { data: remoteTokens } = useTokenList();
   const publicClient = usePublicClient();
