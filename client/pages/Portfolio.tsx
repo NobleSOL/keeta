@@ -4,7 +4,7 @@ import { formatUnits, parseUnits } from "viem";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { v2Addresses } from "@/amm/v2";
+import { v2Addresses, v2Abi } from "@/amm/v2";
 import { v3Addresses, nfpmAbi } from "@/amm/v3";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, DollarSign } from "lucide-react";
@@ -114,26 +114,7 @@ const FACTORY_ABI = [
   },
 ] as const;
 
-const ROUTER_ABI = [
-  {
-    type: "function",
-    name: "removeLiquidity",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "tokenA", type: "address" },
-      { name: "tokenB", type: "address" },
-      { name: "liquidity", type: "uint256" },
-      { name: "amountAMin", type: "uint256" },
-      { name: "amountBMin", type: "uint256" },
-      { name: "to", type: "address" },
-      { name: "deadline", type: "uint256" },
-    ],
-    outputs: [
-      { name: "amountA", type: "uint256" },
-      { name: "amountB", type: "uint256" },
-    ],
-  },
-] as const;
+// Use router ABI from v2.ts
 
 export default function Portfolio() {
   const { address, isConnected } = useAccount();
@@ -407,7 +388,7 @@ export default function Portfolio() {
       // Remove liquidity
       const tx = await writeContractAsync({
         address: addrs.router,
-        abi: ROUTER_ABI,
+        abi: v2Abi.router,
         functionName: "removeLiquidity",
         args: [
           position.token0 as `0x${string}`,
