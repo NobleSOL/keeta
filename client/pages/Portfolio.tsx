@@ -361,8 +361,27 @@ export default function Portfolio() {
 
     try {
       const liquidityToRemove = (position.lpBalance * BigInt(percentage)) / 100n;
-      const amount0Min = (position.token0Amount * BigInt(percentage) * 95n) / 10000n; // 5% slippage
-      const amount1Min = (position.token1Amount * BigInt(percentage) * 95n) / 10000n;
+
+      // Fetch fresh reserves to calculate correct minimum amounts
+      const [reserves] = await publicClient.readContract({
+        address: position.pairAddress as `0x${string}`,
+        abi: PAIR_ABI,
+        functionName: "getReserves",
+      }) as any;
+
+      const totalSupply = await publicClient.readContract({
+        address: position.pairAddress as `0x${string}`,
+        abi: PAIR_ABI,
+        functionName: "totalSupply",
+      }) as bigint;
+
+      // Calculate expected amounts based on current reserves
+      const amount0Expected = (liquidityToRemove * reserves[0]) / totalSupply;
+      const amount1Expected = (liquidityToRemove * reserves[1]) / totalSupply;
+
+      // Apply 1% slippage to expected amounts (more conservative)
+      const amount0Min = (amount0Expected * 99n) / 100n;
+      const amount1Min = (amount1Expected * 99n) / 100n;
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 300); // 5 minutes
 
       // Approve router to spend LP tokens
