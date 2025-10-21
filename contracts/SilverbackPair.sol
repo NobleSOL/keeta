@@ -135,11 +135,11 @@ contract SilverbackPair is ISilverbackPair {
         require(to != address(0), "ZERO_ADDRESS");
         uint256 balance0 = IERC20(token0).balanceOf(address(this));
         uint256 balance1 = IERC20(token1).balanceOf(address(this));
-        uint256 liquidity = balanceOf[msg.sender];
+        uint256 liquidity = balanceOf[address(this)];
         require(liquidity > 0, "INSUFFICIENT_LIQUIDITY");
         amount0 = (liquidity * balance0) / totalSupply;
         amount1 = (liquidity * balance1) / totalSupply;
-        _burn(msg.sender, liquidity);
+        _burn(address(this), liquidity);
         _safeTransfer(token0, to, amount0);
         _safeTransfer(token1, to, amount1);
         _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)));
