@@ -297,6 +297,11 @@ contract SilverbackUnifiedRouter {
         address to,
         uint deadline
     ) external payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
+        // Create pair if it doesn't exist
+        if (ISilverbackFactory(factory).getPair(token, WETH) == address(0)) {
+            ISilverbackFactory(factory).createPair(token, WETH);
+        }
+
         (amountToken, amountETH) = _calculateLiquidity(
             token,
             WETH,
@@ -306,9 +311,6 @@ contract SilverbackUnifiedRouter {
             amountETHMin
         );
         address pair = ISilverbackFactory(factory).getPair(token, WETH);
-        if (pair == address(0)) {
-            pair = ISilverbackFactory(factory).createPair(token, WETH);
-        }
         _safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH9(WETH).deposit{value: amountETH}();
         _safeTransfer(WETH, pair, amountETH);
