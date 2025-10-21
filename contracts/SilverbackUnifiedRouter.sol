@@ -62,6 +62,11 @@ contract SilverbackUnifiedRouter {
         _;
     }
 
+    // Receive ETH from WETH contract
+    receive() external payable {
+        require(msg.sender == WETH, "ONLY_WETH");
+    }
+
     // ========== CONSTRUCTOR ==========
     constructor(
         address _feeRecipient,
@@ -83,8 +88,6 @@ contract SilverbackUnifiedRouter {
         factory = _factory;
         WETH = _WETH;
     }
-
-    receive() external payable {}
 
     // ========== ADMIN ==========
     function setOwner(address _owner) external onlyOwner {
@@ -286,6 +289,37 @@ contract SilverbackUnifiedRouter {
         }
     }
 
+    function addLiquidityETH(
+        address token,
+        uint amountTokenDesired,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
+        (amountToken, amountETH) = _calculateLiquidity(
+            token,
+            WETH,
+            amountTokenDesired,
+            msg.value,
+            amountTokenMin,
+            amountETHMin
+        );
+        address pair = ISilverbackFactory(factory).getPair(token, WETH);
+        if (pair == address(0)) {
+            pair = ISilverbackFactory(factory).createPair(token, WETH);
+        }
+        _safeTransferFrom(token, msg.sender, pair, amountToken);
+        IWETH9(WETH).deposit{value: amountETH}();
+        _safeTransfer(WETH, pair, amountETH);
+        liquidity = ISilverbackPair(pair).mint(to);
+        // Refund excess ETH
+        if (msg.value > amountETH) {
+            (bool success, ) = msg.sender.call{value: msg.value - amountETH}("");
+            require(success, "ETH_REFUND_FAILED");
+        }
+    }
+
     function removeLiquidity(
         address tokenA,
         address tokenB,
@@ -302,6 +336,27 @@ contract SilverbackUnifiedRouter {
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
         require(amountA >= amountAMin, "INSUFFICIENT_A");
         require(amountB >= amountBMin, "INSUFFICIENT_B");
+    }
+
+    function removeLiquidityETH(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external ensure(deadline) returns (uint amountToken, uint amountETH) {
+        address pair = ISilverbackFactory(factory).getPair(token, WETH);
+        _safeTransferFrom(pair, msg.sender, pair, liquidity);
+        (uint amount0, uint amount1) = ISilverbackPair(pair).burn(address(this));
+        (address token0, ) = SilverbackLibrary.sortTokens(token, WETH);
+        (amountToken, amountETH) = token == token0 ? (amount0, amount1) : (amount1, amount0);
+        require(amountToken >= amountTokenMin, "INSUFFICIENT_TOKEN");
+        require(amountETH >= amountETHMin, "INSUFFICIENT_ETH");
+        _safeTransfer(token, to, amountToken);
+        IWETH9(WETH).withdraw(amountETH);
+        (bool success, ) = to.call{value: amountETH}("");
+        require(success, "ETH_TRANSFER_FAILED");
     }
 
     function swapExactTokensForTokens(
