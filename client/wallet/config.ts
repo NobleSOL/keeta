@@ -30,7 +30,7 @@ const enableWalletConnect = Boolean(wcId && isAllowedOrigin);
 // Canonical public URL used in WalletConnect metadata (should be production domain)
 const siteUrl =
   ((import.meta as any).env?.VITE_PUBLIC_SITE_URL as string) ||
-  "https://www.silverbackdefi.com";
+  "https://www.silverbackdefi.app";
 
 // Coinbase connector allowlist
 const cbAllowRaw = (import.meta as any).env?.VITE_CB_ALLOWED_ORIGINS as
