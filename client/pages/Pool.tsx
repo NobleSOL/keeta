@@ -11,11 +11,15 @@ import {
   useWriteContract,
 } from "wagmi";
 import { ERC20_ABI } from "@/lib/erc20";
-import { formatUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { v2Addresses, v2Abi } from "@/amm/v2";
 import { v3Address, nfpmAbi } from "@/amm/v3";
 import { toast } from "@/hooks/use-toast";
 import { baseSepolia } from "viem/chains";
+
+// WETH address on Base (Sepolia and Mainnet use same address)
+const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
+const ETH_SENTINEL = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 const PAIR_ABI = [
   {
@@ -125,12 +129,20 @@ export default function Pool() {
       if (!addrs || !tokenA.address || !tokenB.address) return;
 
       try {
+        // Convert ETH sentinel to WETH for pair lookup
+        const addrA = tokenA.address.toLowerCase() === ETH_SENTINEL.toLowerCase()
+          ? WETH_ADDRESS
+          : tokenA.address;
+        const addrB = tokenB.address.toLowerCase() === ETH_SENTINEL.toLowerCase()
+          ? WETH_ADDRESS
+          : tokenB.address;
+
         // Get pair address
         const pair = (await publicClient.readContract({
           address: addrs.factory,
           abi: v2Abi.factory,
           functionName: "getPair",
-          args: [tokenA.address as `0x${string}`, tokenB.address as `0x${string}`],
+          args: [addrA as `0x${string}`, addrB as `0x${string}`],
         })) as string;
 
         if (cancel || !pair || pair === "0x0000000000000000000000000000000000000000") {
@@ -154,7 +166,7 @@ export default function Pool() {
         })) as string;
 
         // Determine if tokenA is token0 or token1
-        const isToken0 = token0.toLowerCase() === (tokenA.address as string).toLowerCase();
+        const isToken0 = token0.toLowerCase() === addrA.toLowerCase();
 
         if (cancel) return;
         setReserves({
@@ -212,6 +224,9 @@ export default function Pool() {
   // Auto-calculate amounts based on pool ratio
   useEffect(() => {
     if (!reserves || mode !== "add") return;
+
+    // Skip auto-calculation if pool is empty (both reserves are 0)
+    if (reserves.reserveA === 0n && reserves.reserveB === 0n) return;
 
     const decA = tokenA.decimals ?? 18;
     const decB = tokenB.decimals ?? 18;
@@ -285,14 +300,30 @@ export default function Pool() {
       try {
         const decA = tokenA.decimals ?? 18;
         const decB = tokenB.decimals ?? 18;
-        const amtAWei = BigInt(Math.floor(Number(amtA) * 10 ** decA));
-        const amtBWei = BigInt(Math.floor(Number(amtB) * 10 ** decB));
+        const amtAWei = parseUnits(amtA, decA);
+        const amtBWei = parseUnits(amtB, decB);
 
-        // Calculate min amounts with slippage + 0.1% buffer for rounding
-        const slippageWithBuffer = slippage + 0.1;
-        const minA = (amtAWei * BigInt(Math.floor((100 - slippageWithBuffer) * 100))) / 10000n;
-        const minB = (amtBWei * BigInt(Math.floor((100 - slippageWithBuffer) * 100))) / 10000n;
+        // Calculate min amounts with slippage
+        // For empty pools, use much higher slippage tolerance (5%) to allow any ratio
+        const isEmptyPool = !reserves || (reserves.reserveA === 0n && reserves.reserveB === 0n);
+        const effectiveSlippage = isEmptyPool ? 5.0 : slippage + 0.1;
+        const minA = (amtAWei * BigInt(Math.floor((100 - effectiveSlippage) * 100))) / 10000n;
+        const minB = (amtBWei * BigInt(Math.floor((100 - effectiveSlippage) * 100))) / 10000n;
         const deadline = BigInt(Math.floor(Date.now() / 1000) + 1200); // 20 min
+
+        console.log("💧 Add Liquidity Debug:", {
+          tokenA: tokenA.symbol,
+          tokenB: tokenB.symbol,
+          amtA,
+          amtB,
+          amtAWei: amtAWei.toString(),
+          amtBWei: amtBWei.toString(),
+          minA: minA.toString(),
+          minB: minB.toString(),
+          effectiveSlippage: `${effectiveSlippage}%`,
+          isEmptyPool,
+          reserves: reserves ? `${reserves.reserveA.toString()} / ${reserves.reserveB.toString()}` : "none",
+        });
 
         // Approve tokens first if needed
         const addrA = tokenA.address as `0x${string}`;
@@ -408,6 +439,14 @@ export default function Pool() {
           const tokenAmount = isEthA ? amtBWei : amtAWei;
           const ethMin = isEthA ? minA : minB;
           const tokenMin = isEthA ? minB : minA;
+
+          console.log("🔄 addLiquidityETH params:", {
+            token: otherAddr,
+            tokenAmount: tokenAmount.toString(),
+            tokenMin: tokenMin.toString(),
+            ethMin: ethMin.toString(),
+            ethValue: ethAmount.toString(),
+          });
 
           liquidityHash = await writeContractAsync({
             address: addrs.router,

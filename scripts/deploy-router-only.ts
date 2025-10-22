@@ -44,8 +44,11 @@ async function main() {
     wallet
   );
 
+  // Fee recipient address
+  const FEE_RECIPIENT = "0x1C0eF1d9a53753CcE3eC062F8FE46E153B982645";
+
   const routerContract = await routerFactory.deploy(
-    deployerAddress, // fee recipient
+    FEE_RECIPIENT, // fee recipient
     FEE_BPS,
     factoryAddress,
     WETH_ADDRESS
@@ -58,7 +61,8 @@ async function main() {
   console.log("✅ SilverbackUnifiedRouter deployed at:", routerAddress);
   console.log("   Factory:", factoryAddress);
   console.log("   WETH:", WETH_ADDRESS);
-  console.log("   Fee recipient:", deployerAddress);
+  console.log("   Fee recipient:", FEE_RECIPIENT);
+  console.log("   Deployer:", deployerAddress);
   console.log("   Fee:", FEE_BPS / 100, "%");
 
   // Update .env file

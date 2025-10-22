@@ -12,12 +12,14 @@ export const TOKEN_META: Record<string, TokenMeta> = {
     symbol: "ETH",
     name: "Ether",
     logo: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png",
+    address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", // Native ETH sentinel
+    decimals: 18,
   },
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
     logo: "https://assets.kraken.com/marketing/web/icons-uni-webp/s_usdc.webp?i=kds",
-    address: "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913",
+    address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     decimals: 6,
   },
   WBTC: {
