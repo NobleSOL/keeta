@@ -40,9 +40,18 @@ export async function fetchOpenOceanQuoteBase({
     fullData: json?.data
   });
 
-  const toAmount = BigInt(
+  let toAmount = BigInt(
     json?.data?.outAmount || json?.data?.toAmount || json?.toAmount || 0,
   );
+
+  // CRITICAL FIX: OpenOcean returns USDC amounts with 18 decimals instead of 6
+  // We need to correct this by dividing by 10^12 for USDC on Base mainnet
+  const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase();
+  if (outTokenAddress.toLowerCase() === USDC_BASE) {
+    console.log('⚠️  Correcting OpenOcean USDC decimal bug: dividing by 10^12');
+    toAmount = toAmount / (10n ** 12n);
+  }
+
   return { outAmountWei: toAmount, dataRaw: json };
 }
 
@@ -100,9 +109,16 @@ export async function fetchOpenOceanSwapBase({
   const to = (data?.to || data?.tx?.to) as `0x${string}`;
   const dataHex = (data?.data || data?.tx?.data) as `0x${string}`;
   const valueRaw = data?.value ?? data?.tx?.value ?? "0";
-  const outAmount = BigInt(
+  let outAmount = BigInt(
     data?.outAmount || data?.toAmount || data?.amountOut || 0,
   );
+
+  // CRITICAL FIX: OpenOcean returns USDC amounts with 18 decimals instead of 6
+  const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase();
+  if (outTokenAddress.toLowerCase() === USDC_BASE) {
+    console.log('⚠️  Correcting OpenOcean USDC decimal bug in swap build: dividing by 10^12');
+    outAmount = outAmount / (10n ** 12n);
+  }
 
   if (!to || !dataHex) {
     console.error("OpenOcean response missing fields:", {
