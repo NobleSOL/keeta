@@ -15,6 +15,23 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist/spa",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks - split large dependencies
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-web3': ['wagmi', 'viem'],
+          'vendor-ui': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+          ],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000, // Increase limit to 1MB to reduce warnings
   },
   plugins: [react(), expressPlugin()],
   resolve: {
