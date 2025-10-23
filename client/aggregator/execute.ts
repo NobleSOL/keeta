@@ -240,7 +240,7 @@ export async function executeSwapViaOpenOcean(
   slippageBps: number,
 ): Promise<{ txHash: string; oo: SwapBuildResult | null }> {
   const gasPriceWei = await pc.getGasPrice();
-  const { net } = applyFee(amountIn);
+  const { net, fee } = applyFee(amountIn);
 
   let oo: SwapBuildResult;
   try {
@@ -287,7 +287,7 @@ export async function executeSwapViaOpenOcean(
         sweep: true,
       },
     ],
-    value: isNative ? amountIn : 0n,
+    value: isNative ? net : 0n, // Send net amount (after fee) for ETH swaps
     chainId: base.id,
   });
 
