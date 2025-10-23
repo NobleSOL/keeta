@@ -23,8 +23,15 @@ const wcAllowed = (wcAllowRaw || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+
+// Allow WalletConnect if:
+// 1. Project ID exists AND (allowed origins list is empty OR current origin is in the list OR localhost/development)
+const isLocalhost = appOrigin.includes("localhost") || appOrigin.includes("127.0.0.1");
 const isAllowedOrigin =
-  wcAllowed.length > 0 && appOrigin && wcAllowed.includes(appOrigin);
+  wcAllowed.length === 0 || // No restrictions if list is empty
+  (appOrigin && wcAllowed.includes(appOrigin)) || // Explicitly allowed
+  isLocalhost; // Always allow localhost for development
+
 const enableWalletConnect = Boolean(wcId && isAllowedOrigin);
 
 // Canonical public URL used in WalletConnect metadata (should be production domain)
@@ -40,8 +47,12 @@ const cbAllowed = (cbAllowRaw || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+
+// Allow Coinbase if: allowed origins list is empty OR current origin is in the list OR localhost
 const enableCoinbase =
-  cbAllowed.length > 0 && appOrigin && cbAllowed.includes(appOrigin);
+  cbAllowed.length === 0 || // No restrictions if list is empty
+  (appOrigin && cbAllowed.includes(appOrigin)) || // Explicitly allowed
+  isLocalhost; // Always allow localhost for development
 
 export const wagmiConfig = createConfig({
   chains: [baseSepolia, base, mainnet],
