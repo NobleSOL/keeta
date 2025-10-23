@@ -61,7 +61,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                   {tx.fromToken.amount} {tx.fromToken.symbol} → {tx.toToken.amount} {tx.toToken.symbol}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>{formatDistanceToNow(tx.timestamp, { addSuffix: true })}</span>
+                  <span>{formatDistanceToNow(new Date(tx.timestamp), { addSuffix: true })}</span>
                   {tx.venue && (
                     <>
                       <span>•</span>
