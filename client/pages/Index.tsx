@@ -3,6 +3,7 @@ import TokenInput, { Token } from "@/components/swap/TokenInput";
 import TokenSelector from "@/components/swap/TokenSelector";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { TransactionHistory, Transaction } from "@/components/swap/TransactionHistory";
 import { ArrowDownUp } from "lucide-react";
 import TrendingPills from "@/components/shared/TrendingPills";
 import QuickFill from "@/components/shared/QuickFill";
@@ -93,6 +94,12 @@ export default function Index() {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
   const [toBalance, setToBalance] = useState<number | undefined>(undefined);
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    // Load from localStorage on mount
+    if (typeof window === "undefined") return [];
+    const stored = localStorage.getItem("swap-history");
+    return stored ? JSON.parse(stored) : [];
+  });
 
   function resolveMeta(t: Token): {
     address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
@@ -285,6 +292,22 @@ export default function Index() {
 
   const priceImpactInfo = getPriceImpactInfo(quoteOut?.priceImpact);
 
+  // Save transactions to localStorage
+  const saveTransaction = (tx: Transaction) => {
+    const updated = [tx, ...transactions];
+    setTransactions(updated);
+    localStorage.setItem("swap-history", JSON.stringify(updated));
+  };
+
+  // Update transaction status
+  const updateTransactionStatus = (hash: string, status: Transaction["status"]) => {
+    const updated = transactions.map((tx) =>
+      tx.hash === hash ? { ...tx, status } : tx
+    );
+    setTransactions(updated);
+    localStorage.setItem("swap-history", JSON.stringify(updated));
+  };
+
   async function handleSwap() {
     if (!isConnected || !address || !publicClient) return connectPreferred();
     const inMeta = resolveMeta(fromToken);
@@ -347,6 +370,23 @@ export default function Index() {
         txHash = result.txHash;
       }
 
+      // Save transaction to history (pending state)
+      const transaction: Transaction = {
+        hash: txHash,
+        timestamp: Date.now(),
+        fromToken: {
+          symbol: fromToken.symbol,
+          amount: Number(fromAmount).toFixed(4),
+        },
+        toToken: {
+          symbol: toToken.symbol,
+          amount: quoteOut ? Number(quoteOut.formatted).toFixed(4) : "0",
+        },
+        status: "pending",
+        venue: quoteOut?.venue,
+      };
+      saveTransaction(transaction);
+
       // Show pending toast
       setSwapStatus("waiting");
       const explorerUrl = `https://sepolia.basescan.org/tx/${txHash}`;
@@ -364,6 +404,9 @@ export default function Index() {
 
       // Wait for confirmation
       await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+
+      // Update transaction status to success
+      updateTransactionStatus(txHash, "success");
 
       // Show success toast
       toast({
@@ -387,6 +430,14 @@ export default function Index() {
       console.error("Swap error:", e);
       setQuoteError(errorMsg);
       setSwapStatus("idle");
+
+      // If there was a transaction hash, mark it as failed
+      // (Sometimes errors happen before txHash is created)
+      const txHashMatch = e?.message?.match(/0x[a-fA-F0-9]{64}/);
+      if (txHashMatch) {
+        updateTransactionStatus(txHashMatch[0], "failed");
+      }
+
       toast({
         title: "Swap Failed",
         description: errorMsg,
@@ -563,10 +614,11 @@ export default function Index() {
             </div>
           </section>
 
-          <aside className="order-2 md:order-2 md:col-span-2">
+          <aside className="order-2 md:order-2 md:col-span-2 space-y-6">
             <div className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur">
               <TrendingPills symbols={["ETH", "KTA", "AERO", "SBCK"]} />
             </div>
+            <TransactionHistory transactions={transactions} />
           </aside>
         </div>
       </div>
