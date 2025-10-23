@@ -48,8 +48,17 @@ export async function fetchOpenOceanQuoteBase({
   // We need to correct this by dividing by 10^12 for USDC on Base mainnet
   const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase();
   if (outTokenAddress.toLowerCase() === USDC_BASE) {
-    console.log('⚠️  Correcting OpenOcean USDC decimal bug: dividing by 10^12');
+    const originalAmount = toAmount;
+    console.log('🔍 USDC amount before correction:', {
+      original: originalAmount.toString(),
+      originalLength: originalAmount.toString().length,
+      willDivideBy: '10^12'
+    });
     toAmount = toAmount / (10n ** 12n);
+    console.log('✅ USDC amount after correction:', {
+      corrected: toAmount.toString(),
+      correctedLength: toAmount.toString().length
+    });
   }
 
   return { outAmountWei: toAmount, dataRaw: json };
