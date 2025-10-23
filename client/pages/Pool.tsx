@@ -15,7 +15,7 @@ import { formatUnits, parseUnits } from "viem";
 import { v2Addresses, v2Abi } from "@/amm/v2";
 import { v3Address, nfpmAbi } from "@/amm/v3";
 import { toast } from "@/hooks/use-toast";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 import { PoolStatistics } from "@/components/pool/PoolStatistics";
 
 // WETH address on Base (Sepolia and Mainnet use same address)

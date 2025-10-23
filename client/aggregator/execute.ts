@@ -1,5 +1,5 @@
 import { PublicClient } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 import { DEFAULT_DEADLINE_SEC, FEE_BPS } from "@/aggregator/config";
 import { ERC20_ABI } from "@/lib/erc20";
 import {
@@ -187,7 +187,7 @@ export async function executeSwapViaSilverbackV2(
       functionName: "swapExactETHForTokens",
       args: [minOut, path, account, deadline],
       value: amountIn, // Full amount (no fee deduction)
-      chainId: baseSepolia.id,
+      chainId: base.id,
     });
   } else if (isNativeOut) {
     // Token -> ETH swap
@@ -209,7 +209,7 @@ export async function executeSwapViaSilverbackV2(
       abi: UNIFIED_ROUTER_V2_ABI,
       functionName: "swapExactTokensForETH",
       args: [amountIn, minOut, path, account, deadline],
-      chainId: baseSepolia.id,
+      chainId: base.id,
     });
   } else {
     // Token -> Token swap
@@ -221,7 +221,7 @@ export async function executeSwapViaSilverbackV2(
       abi: UNIFIED_ROUTER_V2_ABI,
       functionName: "swapExactTokensForTokens",
       args: [amountIn, minOut, path, account, deadline],
-      chainId: baseSepolia.id,
+      chainId: base.id,
     });
   }
 
@@ -288,7 +288,7 @@ export async function executeSwapViaOpenOcean(
       },
     ],
     value: isNative ? amountIn : 0n,
-    chainId: baseSepolia.id,
+    chainId: base.id,
   });
 
   return { txHash: hash as string, oo };

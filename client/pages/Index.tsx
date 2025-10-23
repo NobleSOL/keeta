@@ -14,7 +14,7 @@ import { toWei, fromWei } from "@/aggregator/openocean";
 import { getBestAggregatedQuote } from "@/aggregator/engine";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 import { executeSwapViaOpenOcean, executeSwapViaSilverbackV2, unifiedRouterAddress } from "@/aggregator/execute";
 import { toast } from "@/hooks/use-toast";
 
@@ -81,7 +81,7 @@ export default function Index() {
   const connectPreferred = () => {
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
-    if (preferred) connect({ connector: preferred, chainId: baseSepolia.id });
+    if (preferred) connect({ connector: preferred, chainId: base.id });
   };
 
   const { data: remoteTokens } = useTokenList();
