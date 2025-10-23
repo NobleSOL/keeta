@@ -31,6 +31,15 @@ export async function fetchOpenOceanQuoteBase({
     throw new Error(`OpenOcean quote failed: ${res.status} ${text}`);
   }
   const json = await res.json();
+
+  // Debug log the raw response
+  console.log('OpenOcean quote response:', {
+    inToken: inTokenAddress,
+    outToken: outTokenAddress,
+    rawOutAmount: json?.data?.outAmount || json?.data?.toAmount || json?.toAmount,
+    fullData: json?.data
+  });
+
   const toAmount = BigInt(
     json?.data?.outAmount || json?.data?.toAmount || json?.toAmount || 0,
   );
