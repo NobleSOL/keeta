@@ -10,15 +10,14 @@ function truncate(addr?: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
-// Wallet logos mapping
+// Wallet logos mapping - using reliable CDN URLs
 const WALLET_ICONS: Record<string, string> = {
-  metamask: "https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/SVG_MetaMask_Icon_Color.svg",
-  "coinbase wallet": "https://avatars.githubusercontent.com/u/18060234",
-  walletconnect: "https://avatars.githubusercontent.com/u/37784886",
-  phantom: "https://pbs.twimg.com/profile_images/1598564948813770752/CCRSJvRh_400x400.jpg",
-  rainbow: "https://avatars.githubusercontent.com/u/48327834",
+  metamask: "https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg",
+  coinbase: "https://images.ctfassets.net/q5ulk4bp65x7/3TBS4oVkD1ghowTqVQJlqj/d9e39fc1ad9c25f9adb8aefcdaa1b448/coinbase-icon2.svg",
+  walletconnect: "https://seeklogo.com/images/W/walletconnect-logo-EE83B50C97-seeklogo.com.png",
+  phantom: "https://phantom.app/img/phantom-logo.svg",
+  rainbow: "https://avatars.githubusercontent.com/u/48327834?s=200&v=4",
   trust: "https://trustwallet.com/assets/images/media/assets/TWT.png",
-  injected: "https://cdn-icons-png.flaticon.com/512/2965/2965310.png",
 };
 
 export default function ConnectButton() {
