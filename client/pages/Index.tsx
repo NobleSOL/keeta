@@ -120,21 +120,49 @@ export default function Index() {
     address: `0x${string}` | "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
     decimals: number;
   } | null {
-    if (t.symbol.toUpperCase() === "ETH")
+    // Always handle ETH/WETH specially
+    const symbol = t.symbol.toUpperCase();
+    if (symbol === "ETH" || symbol === "WETH") {
+      // If it's WETH with an address, use that address but keep 18 decimals
+      if (symbol === "WETH" && t.address) {
+        return { address: t.address as `0x${string}`, decimals: 18 };
+      }
+      // Native ETH
       return {
         address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         decimals: 18,
       };
-    const byAddr = (remoteTokens || []).find(
-      (rt) => rt.address?.toLowerCase() === (t.address || "").toLowerCase(),
-    );
-    if (byAddr) return { address: byAddr.address, decimals: byAddr.decimals };
+    }
+
+    // Try to find in remote tokens by address first (most reliable)
+    if (t.address) {
+      const byAddr = (remoteTokens || []).find(
+        (rt) => rt.address?.toLowerCase() === t.address?.toLowerCase(),
+      );
+      if (byAddr && byAddr.decimals > 0) {
+        return { address: byAddr.address, decimals: byAddr.decimals };
+      }
+    }
+
+    // Try to find in remote tokens by symbol
     const bySym = (remoteTokens || []).find(
-      (rt) => rt.symbol?.toUpperCase() === t.symbol.toUpperCase(),
+      (rt) => rt.symbol?.toUpperCase() === symbol,
     );
-    if (bySym) return { address: bySym.address, decimals: bySym.decimals };
-    if (t.address && t.decimals != null)
+    if (bySym && bySym.decimals > 0) {
+      return { address: bySym.address, decimals: bySym.decimals };
+    }
+
+    // Fall back to local token data if it has valid decimals
+    if (t.address && t.decimals != null && t.decimals > 0) {
       return { address: t.address as any, decimals: t.decimals };
+    }
+
+    // Last resort: return with 18 decimals (most common for ERC20)
+    if (t.address) {
+      console.warn(`Token ${t.symbol} has no decimals info, defaulting to 18`);
+      return { address: t.address as any, decimals: 18 };
+    }
+
     return null;
   }
 
@@ -203,9 +231,22 @@ export default function Index() {
           gasPrice,
         );
         if (cancel) return;
+
+        // Safety check: ensure we have valid decimals
+        const decimals = outMeta.decimals > 0 ? outMeta.decimals : 18;
+        const formattedAmount = fromWei(q.outAmountWei, decimals);
+
+        // Debug log to catch decimal issues
+        console.log('Quote formatting:', {
+          token: toToken.symbol,
+          wei: q.outAmountWei.toString(),
+          decimals,
+          formatted: formattedAmount,
+        });
+
         setQuoteOut({
           wei: q.outAmountWei,
-          formatted: fromWei(q.outAmountWei, outMeta.decimals),
+          formatted: formattedAmount,
           venue: q.venue,
           feeWei: q.feeTakenWei,
           priceImpact: q.priceImpact,
