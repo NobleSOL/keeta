@@ -41,6 +41,12 @@ export default function Index() {
     return Number.isFinite(a) && a > 0 && fromToken.symbol !== toToken.symbol;
   }, [fromAmount, fromToken.symbol, toToken.symbol]);
 
+  // Check if user has insufficient balance
+  const hasInsufficientBalance = useMemo(() => {
+    if (!fromBalance || !fromAmount) return false;
+    return Number(fromAmount) > fromBalance;
+  }, [fromBalance, fromAmount]);
+
   const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const { writeContractAsync, isPending: isWriting } = useWriteContract();
@@ -67,9 +73,12 @@ export default function Index() {
       };
       return { label: statusLabels[swapStatus], disabled: true } as const;
     }
+    if (hasInsufficientBalance && fromAmount) {
+      return { label: "Insufficient Balance", disabled: true } as const;
+    }
     if (canSwap) return { label: isWriting ? "Processing..." : "Swap", disabled: isWriting } as const;
     return { label: "Enter an amount", disabled: true } as const;
-  }, [isConnected, swapStatus, canSwap, isWriting]);
+  }, [isConnected, swapStatus, canSwap, isWriting, hasInsufficientBalance, fromAmount]);
 
   const { data: remoteTokens } = useTokenList();
   const publicClient = usePublicClient();
@@ -111,33 +120,39 @@ export default function Index() {
   const formatErrorMessage = (error: any): string => {
     const msg = error?.shortMessage || error?.message || String(error);
 
-    // Common error patterns
+    // Common error patterns with actionable guidance
     if (msg.includes("insufficient funds") || msg.includes("insufficient balance")) {
-      return "Insufficient balance. You don't have enough tokens to complete this swap.";
+      return "Insufficient balance. You don't have enough tokens to complete this swap. Try reducing the amount.";
     }
-    if (msg.includes("User rejected") || msg.includes("user rejected")) {
-      return "Transaction rejected. You cancelled the transaction in your wallet.";
+    if (msg.includes("User rejected") || msg.includes("user rejected") || msg.includes("User denied")) {
+      return "Transaction cancelled. You rejected the transaction in your wallet.";
     }
     if (msg.includes("allowance") || msg.includes("transfer amount exceeds allowance")) {
-      return "Approval required. Please approve the token spending first.";
+      return "Token approval failed. Please try again and approve the token spending in your wallet.";
     }
-    if (msg.includes("INSUFFICIENT_OUTPUT_AMOUNT") || msg.includes("slippage")) {
-      return "Price moved too much. Try increasing your slippage tolerance or refreshing the quote.";
+    if (msg.includes("INSUFFICIENT_OUTPUT_AMOUNT") || msg.includes("slippage") || msg.includes("too little received")) {
+      return "Price moved unfavorably. Try increasing your slippage tolerance (currently " + slippage + "%) or wait a moment and try again.";
     }
     if (msg.includes("INSUFFICIENT_LIQUIDITY") || msg.includes("insufficient liquidity")) {
-      return "Not enough liquidity. This trading pair doesn't have sufficient liquidity for this trade size.";
+      return "Insufficient liquidity. This pool doesn't have enough liquidity for this trade size. Try a smaller amount or different token pair.";
     }
-    if (msg.includes("EXPIRED") || msg.includes("deadline")) {
-      return "Transaction expired. The transaction took too long to process. Please try again.";
+    if (msg.includes("EXPIRED") || msg.includes("deadline") || msg.includes("transaction too old")) {
+      return "Transaction expired. The network was too busy and the transaction took too long. Please try again.";
     }
     if (msg.includes("cannot estimate gas") || msg.includes("gas required exceeds")) {
-      return "Transaction will likely fail. Please check your token balances and approvals.";
+      return "Transaction will fail. This usually means insufficient balance or an issue with the trade. Check your balances and try again.";
     }
-    if (msg.includes("nonce too low")) {
-      return "Transaction conflict. Please wait for pending transactions to complete.";
+    if (msg.includes("nonce too low") || msg.includes("replacement transaction")) {
+      return "Transaction conflict detected. Please wait for your pending transactions to complete, then try again.";
     }
-    if (msg.includes("network") || msg.includes("fetch failed")) {
-      return "Network error. Please check your internet connection and try again.";
+    if (msg.includes("network") || msg.includes("fetch failed") || msg.includes("could not detect network")) {
+      return "Network connection error. Please check your internet connection and ensure your wallet is connected to Base Sepolia.";
+    }
+    if (msg.includes("execution reverted") && !msg.includes("INSUFFICIENT")) {
+      return "Transaction failed. The smart contract rejected this transaction. This may be due to insufficient balance, allowance, or liquidity.";
+    }
+    if (msg.includes("replacement fee too low")) {
+      return "Gas price too low. Your previous transaction is still pending. Either wait for it to complete or increase the gas price.";
     }
 
     // If no pattern matches, return a cleaned version
@@ -490,6 +505,21 @@ export default function Index() {
                   </div>
                 )}
               </div>
+
+              {/* Insufficient Balance Warning Banner */}
+              {hasInsufficientBalance && fromAmount && (
+                <div className="mt-3 rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-400 text-lg">💰</span>
+                    <div>
+                      <div className="font-semibold text-red-400">Insufficient Balance</div>
+                      <div className="text-xs text-red-300/80 mt-1">
+                        You're trying to swap {Number(fromAmount).toFixed(4)} {fromToken.symbol}, but you only have {fromBalance?.toFixed(4) || "0"} {fromToken.symbol}. Please reduce the amount.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Price Impact Warning Banner */}
               {priceImpactInfo.level === "high" && (
