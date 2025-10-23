@@ -138,48 +138,53 @@ export default function ConnectButton() {
             </p>
           </div>
           <div className="p-2 space-y-1">
-            {connectors.map((c) => {
-              const icon = getWalletIcon(c.name);
-              return (
-                <button
-                  key={c.id}
-                  className={cn(
-                    "flex items-center gap-3 w-full rounded-lg px-3 py-3 text-left transition-colors",
-                    "hover:bg-secondary/80 border border-transparent hover:border-border/40",
-                    {
-                      "opacity-50 cursor-not-allowed": !c.ready,
-                    },
-                  )}
-                  disabled={!c.ready}
-                  onClick={() => {
-                    connect({ connector: c, chainId: baseSepolia.id });
-                    setOpen(false);
-                    // Save last used wallet
-                    if (typeof window !== "undefined") {
-                      localStorage.setItem("lastWallet", c.id);
-                    }
-                  }}
-                >
-                  {icon ? (
-                    <img
-                      src={icon}
-                      alt={c.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                      <Wallet className="h-4 w-4" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="font-medium">{c.name}</div>
-                    {!c.ready && (
-                      <div className="text-xs text-muted-foreground">Not installed</div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+            {connectors.filter((c) => c.ready).length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                <Wallet className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="font-medium mb-1">No wallets detected</p>
+                <p className="text-xs">
+                  Install MetaMask, Coinbase Wallet, or another Web3 wallet to continue
+                </p>
+              </div>
+            ) : (
+              connectors
+                .filter((c) => c.ready)
+                .map((c) => {
+                  const icon = getWalletIcon(c.name);
+                  return (
+                    <button
+                      key={c.id}
+                      className={cn(
+                        "flex items-center gap-3 w-full rounded-lg px-3 py-3 text-left transition-colors",
+                        "hover:bg-secondary/80 border border-transparent hover:border-border/40",
+                      )}
+                      onClick={() => {
+                        connect({ connector: c, chainId: baseSepolia.id });
+                        setOpen(false);
+                        // Save last used wallet
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("lastWallet", c.id);
+                        }
+                      }}
+                    >
+                      {icon ? (
+                        <img
+                          src={icon}
+                          alt={c.name}
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                          <Wallet className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <div className="font-medium">{c.name}</div>
+                      </div>
+                    </button>
+                  );
+                })
+            )}
           </div>
           {status === "error" && error && (
             <div className="p-3 border-t border-border/60 bg-destructive/10">
