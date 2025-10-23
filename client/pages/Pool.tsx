@@ -16,6 +16,7 @@ import { v2Addresses, v2Abi } from "@/amm/v2";
 import { v3Address, nfpmAbi } from "@/amm/v3";
 import { toast } from "@/hooks/use-toast";
 import { baseSepolia } from "viem/chains";
+import { PoolStatistics } from "@/components/pool/PoolStatistics";
 
 // WETH address on Base (Sepolia and Mainnet use same address)
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
@@ -517,18 +518,33 @@ export default function Pool() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold mb-2">Liquidity Pools</h1>
+          <p className="text-muted-foreground text-sm">
+            Add liquidity to earn 0.3% trading fees on every swap
+          </p>
+        </div>
+
         <div className="mx-auto max-w-3xl rounded-2xl border border-border/60 bg-card/60 p-6 shadow-2xl shadow-black/30 backdrop-blur">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex rounded-md bg-secondary/60 p-1 text-xs">
+              <div className="inline-flex rounded-lg bg-secondary/60 p-1 text-xs border border-border/40">
                 <button
-                  className={`px-2 py-1 rounded ${version === "v2" ? "bg-brand text-white" : ""}`}
+                  className={`px-3 py-1.5 rounded-md transition-all ${
+                    version === "v2"
+                      ? "bg-brand text-white shadow-sm"
+                      : "hover:bg-secondary/80"
+                  }`}
                   onClick={() => setVersion("v2")}
                 >
                   V2
                 </button>
                 <button
-                  className={`px-2 py-1 rounded ${version === "v3" ? "bg-brand text-white" : ""}`}
+                  className={`px-3 py-1.5 rounded-md transition-all ${
+                    version === "v3"
+                      ? "bg-brand text-white shadow-sm"
+                      : "hover:bg-secondary/80"
+                  }`}
                   onClick={() => setVersion("v3")}
                 >
                   V3
@@ -536,15 +552,23 @@ export default function Pool() {
               </div>
               <button
                 onClick={() => setMode("add")}
-                className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "add" ? "bg-brand text-white" : "bg-secondary/60"}`}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                  mode === "add"
+                    ? "bg-brand text-white shadow-sm"
+                    : "bg-secondary/60 hover:bg-secondary/80"
+                }`}
               >
-                Add
+                Add Liquidity
               </button>
               <button
                 onClick={() => setMode("remove")}
-                className={`rounded-full px-4 py-2 text-sm font-medium ${mode === "remove" ? "bg-brand text-white" : "bg-secondary/60"}`}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                  mode === "remove"
+                    ? "bg-brand text-white shadow-sm"
+                    : "bg-secondary/60 hover:bg-secondary/80"
+                }`}
               >
-                Remove
+                Manage Positions
               </button>
               {version === "v3" && (
                 <div className="ml-2 flex items-center gap-2 text-xs">
@@ -562,14 +586,14 @@ export default function Pool() {
             <div className="flex items-center gap-3 sm:self-auto">
               <button
                 type="button"
-                className="rounded-md bg-secondary/60 px-3 py-1 text-xs"
+                className="rounded-lg bg-secondary/60 border border-border/40 px-3 py-1.5 text-xs font-medium hover:bg-secondary/80 transition-all"
                 onClick={handleCreatePool}
               >
                 {version === "v2" ? "Create V2 Pair" : "Create V3 Pool"}
               </button>
               <button
                 type="button"
-                className="text-xs text-sky-400 hover:underline"
+                className="text-xs text-sky-400 hover:text-sky-300 transition-colors font-medium"
                 onClick={() =>
                   document.dispatchEvent(new Event("sb:open-slippage"))
                 }
@@ -581,10 +605,16 @@ export default function Pool() {
 
           <div className="space-y-3">
             {reserves && pairAddress && mode === "add" && (
-              <div className="mb-2 rounded-md bg-secondary/40 p-2 text-xs text-muted-foreground">
-                Pool exists at {pairAddress.slice(0, 6)}...{pairAddress.slice(-4)}
-                <br />
-                Current ratio: 1 {tokenA.symbol} = {(Number(reserves.reserveB) / Number(reserves.reserveA)).toFixed(4)} {tokenB.symbol}
+              <div className="mb-3">
+                <PoolStatistics
+                  pairAddress={pairAddress}
+                  tokenASymbol={tokenA.symbol}
+                  tokenBSymbol={tokenB.symbol}
+                  reserveA={reserves.reserveA}
+                  reserveB={reserves.reserveB}
+                  tokenADecimals={tokenA.decimals ?? 18}
+                  tokenBDecimals={tokenB.decimals ?? 18}
+                />
               </div>
             )}
             <TokenInput
@@ -622,20 +652,49 @@ export default function Pool() {
           </div>
 
           <Button
-            className="mt-4 h-12 w-full bg-brand text-white hover:bg-brand/90"
+            className="mt-4 h-12 w-full bg-brand text-white hover:bg-brand/90 disabled:opacity-50"
             disabled={cta.disabled || isWriting}
             onClick={() => {
               if (!isConnected) return connectPreferred();
               if (mode === "add") handleAddLiquidity();
-              else alert("Remove liquidity not yet implemented");
+              else {
+                toast({
+                  title: "Remove Liquidity",
+                  description: "Visit the Positions page to remove liquidity from your existing pools.",
+                });
+              }
             }}
           >
-            {isWriting ? "Processing..." : cta.label}
+            {isWriting ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                <span>Processing...</span>
+              </div>
+            ) : (
+              cta.label
+            )}
           </Button>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            Select tokens or paste a contract address to manage liquidity.
-          </p>
+          {!isConnected && (
+            <p className="mt-3 text-xs text-center text-muted-foreground">
+              Connect your wallet to add liquidity to pools
+            </p>
+          )}
+
+          {isConnected && !pairAddress && mode === "add" && (
+            <p className="mt-3 text-xs text-center text-muted-foreground">
+              This pool doesn't exist yet. Click "Create V2 Pair" to create it.
+            </p>
+          )}
+
+          {isConnected && mode === "remove" && (
+            <p className="mt-3 text-xs text-center text-muted-foreground">
+              To remove liquidity, visit the{" "}
+              <a href="/positions" className="text-sky-400 hover:underline">
+                Positions page
+              </a>
+            </p>
+          )}
         </div>
       </div>
 
