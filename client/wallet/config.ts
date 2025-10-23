@@ -23,15 +23,8 @@ const wcAllowed = (wcAllowRaw || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-
-// Allow WalletConnect if:
-// 1. Project ID exists AND (allowed origins list is empty OR current origin is in the list OR localhost/development)
-const isLocalhost = appOrigin.includes("localhost") || appOrigin.includes("127.0.0.1");
 const isAllowedOrigin =
-  wcAllowed.length === 0 || // No restrictions if list is empty
-  (appOrigin && wcAllowed.includes(appOrigin)) || // Explicitly allowed
-  isLocalhost; // Always allow localhost for development
-
+  wcAllowed.length > 0 && appOrigin && wcAllowed.includes(appOrigin);
 const enableWalletConnect = Boolean(wcId && isAllowedOrigin);
 
 // Canonical public URL used in WalletConnect metadata (should be production domain)
@@ -47,12 +40,8 @@ const cbAllowed = (cbAllowRaw || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-
-// Allow Coinbase if: allowed origins list is empty OR current origin is in the list OR localhost
 const enableCoinbase =
-  cbAllowed.length === 0 || // No restrictions if list is empty
-  (appOrigin && cbAllowed.includes(appOrigin)) || // Explicitly allowed
-  isLocalhost; // Always allow localhost for development
+  cbAllowed.length > 0 && appOrigin && cbAllowed.includes(appOrigin);
 
 export const wagmiConfig = createConfig({
   chains: [baseSepolia, base, mainnet],
@@ -62,16 +51,7 @@ export const wagmiConfig = createConfig({
     [mainnet.id]: http(),
   },
   connectors: [
-    injected({
-      shimDisconnect: true,
-      target() {
-        return {
-          id: 'injected',
-          name: 'Injected Wallet',
-          provider: typeof window !== 'undefined' ? window.ethereum : undefined,
-        };
-      },
-    }),
+    injected({ shimDisconnect: true }),
     ...(enableCoinbase
       ? [coinbaseWallet({ appName, appLogoUrl: appIcon })]
       : []),
@@ -85,7 +65,6 @@ export const wagmiConfig = createConfig({
               url: siteUrl,
               icons: [appIcon],
             },
-            showQrModal: true,
           }),
         ]
       : []),
