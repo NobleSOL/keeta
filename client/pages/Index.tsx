@@ -7,7 +7,7 @@ import { TransactionHistory, Transaction } from "@/components/swap/TransactionHi
 import { ArrowDownUp } from "lucide-react";
 import TrendingPills from "@/components/shared/TrendingPills";
 import QuickFill from "@/components/shared/QuickFill";
-import { tokenBySymbol } from "@/lib/tokens";
+import { tokenBySymbol, TOKEN_META } from "@/lib/tokens";
 import { useAccount, useConnect, usePublicClient, useWriteContract } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
 import { toWei, fromWei } from "@/aggregator/openocean";
@@ -125,21 +125,31 @@ export default function Index() {
     if (symbol === "ETH" || symbol === "WETH") {
       // If it's WETH with an address, use that address but keep 18 decimals
       if (symbol === "WETH" && t.address) {
+        console.log(`✅ Resolved ${symbol} from address:`, { address: t.address, decimals: 18 });
         return { address: t.address as `0x${string}`, decimals: 18 };
       }
       // Native ETH
+      console.log(`✅ Resolved ${symbol} as native:`, { address: "0xeeee...eeee", decimals: 18 });
       return {
         address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         decimals: 18,
       };
     }
 
-    // Try to find in remote tokens by address first (most reliable)
+    // Try local TOKEN_META first (most reliable for our curated list)
+    const localMeta = TOKEN_META[symbol];
+    if (localMeta?.address && localMeta?.decimals != null && localMeta.decimals > 0) {
+      console.log(`✅ Resolved ${symbol} from TOKEN_META:`, { address: localMeta.address, decimals: localMeta.decimals });
+      return { address: localMeta.address as `0x${string}`, decimals: localMeta.decimals };
+    }
+
+    // Try to find in remote tokens by address (most reliable from API)
     if (t.address) {
       const byAddr = (remoteTokens || []).find(
         (rt) => rt.address?.toLowerCase() === t.address?.toLowerCase(),
       );
       if (byAddr && byAddr.decimals > 0) {
+        console.log(`✅ Resolved ${symbol} from remote by address:`, { address: byAddr.address, decimals: byAddr.decimals });
         return { address: byAddr.address, decimals: byAddr.decimals };
       }
     }
@@ -149,20 +159,23 @@ export default function Index() {
       (rt) => rt.symbol?.toUpperCase() === symbol,
     );
     if (bySym && bySym.decimals > 0) {
+      console.log(`✅ Resolved ${symbol} from remote by symbol:`, { address: bySym.address, decimals: bySym.decimals });
       return { address: bySym.address, decimals: bySym.decimals };
     }
 
     // Fall back to local token data if it has valid decimals
     if (t.address && t.decimals != null && t.decimals > 0) {
+      console.log(`✅ Resolved ${symbol} from token prop:`, { address: t.address, decimals: t.decimals });
       return { address: t.address as any, decimals: t.decimals };
     }
 
     // Last resort: return with 18 decimals (most common for ERC20)
     if (t.address) {
-      console.warn(`Token ${t.symbol} has no decimals info, defaulting to 18`);
+      console.warn(`⚠️  Token ${t.symbol} has no decimals info, defaulting to 18`);
       return { address: t.address as any, decimals: 18 };
     }
 
+    console.error(`❌ Could not resolve meta for token ${t.symbol}`);
     return null;
   }
 
