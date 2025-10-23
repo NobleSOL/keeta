@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import TokenInput, { Token } from "@/components/swap/TokenInput";
 import TokenSelector from "@/components/swap/TokenSelector";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { ArrowDownUp } from "lucide-react";
 import TrendingPills from "@/components/shared/TrendingPills";
 import QuickFill from "@/components/shared/QuickFill";
@@ -436,7 +437,8 @@ export default function Index() {
               <div className="mt-4 rounded-xl border border-border/60 bg-secondary/60 p-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Price</span>
-                  <span>
+                  <span className="flex items-center gap-2">
+                    {quoting && <Spinner size="sm" />}
                     {quoteOut && Number(fromAmount) > 0
                       ? `${(Number(quoteOut.formatted) / Number(fromAmount)).toFixed(6)} ${toToken.symbol}`
                       : quoting
@@ -525,6 +527,7 @@ export default function Index() {
                   else handleSwap();
                 }}
               >
+                {swapStatus !== "idle" && <Spinner size="sm" className="mr-2" />}
                 {cta.label}
               </Button>
             </div>
