@@ -1,0 +1,15 @@
+{
+  "network": "base-mainnet",
+  "chainId": 8453,
+  "deployer": "0x461C0AeC0eeA8Cd9C703f604ff51D8463b1f6BA8",
+  "timestamp": "2025-10-23T17:33:19.196Z",
+  "contracts": {
+    "factory": "0x63FfE8C2d8D82eCd2C43e489a99c7e66902cD98a",
+    "router": "0x6FBe8fCA4EA7a81Bdd6AC258c4ed9E2C502b017C",
+    "weth": "0x4200000000000000000000000000000000000006"
+  },
+  "config": {
+    "feeRecipient": "0x461C0AeC0eeA8Cd9C703f604ff51D8463b1f6BA8",
+    "feeBps": 30
+  }
+}
