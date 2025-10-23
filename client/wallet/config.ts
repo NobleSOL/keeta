@@ -62,7 +62,16 @@ export const wagmiConfig = createConfig({
     [mainnet.id]: http(),
   },
   connectors: [
-    injected({ shimDisconnect: true }),
+    injected({
+      shimDisconnect: true,
+      target() {
+        return {
+          id: 'injected',
+          name: 'Injected Wallet',
+          provider: typeof window !== 'undefined' ? window.ethereum : undefined,
+        };
+      },
+    }),
     ...(enableCoinbase
       ? [coinbaseWallet({ appName, appLogoUrl: appIcon })]
       : []),
@@ -76,6 +85,7 @@ export const wagmiConfig = createConfig({
               url: siteUrl,
               icons: [appIcon],
             },
+            showQrModal: true,
           }),
         ]
       : []),
