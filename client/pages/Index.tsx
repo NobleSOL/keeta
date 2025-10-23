@@ -54,12 +54,6 @@ export default function Index() {
 
   const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
 
-  const connectPreferred = () => {
-    const preferred =
-      connectors.find((c) => c.id === "injected") ?? connectors[0];
-    if (preferred) connect({ connector: preferred, chainId: baseSepolia.id });
-  };
-
   const cta = useMemo(() => {
     if (!isConnected)
       return { label: "Connect Wallet", disabled: false } as const;
@@ -80,6 +74,12 @@ export default function Index() {
     if (canSwap) return { label: isWriting ? "Processing..." : "Swap", disabled: isWriting } as const;
     return { label: "Enter an amount", disabled: true } as const;
   }, [isConnected, swapStatus, canSwap, isWriting, hasInsufficientBalance, fromAmount]);
+
+  const connectPreferred = () => {
+    const preferred =
+      connectors.find((c) => c.id === "injected") ?? connectors[0];
+    if (preferred) connect({ connector: preferred, chainId: baseSepolia.id });
+  };
 
   const { data: remoteTokens } = useTokenList();
   const publicClient = usePublicClient();
