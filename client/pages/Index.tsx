@@ -37,6 +37,9 @@ export default function Index() {
     return Number.isFinite(n) ? n : 0.5;
   });
 
+  const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
+  const [toBalance, setToBalance] = useState<number | undefined>(undefined);
+
   const canSwap = useMemo(() => {
     const a = Number(fromAmount);
     return Number.isFinite(a) && a > 0 && fromToken.symbol !== toToken.symbol;
@@ -92,13 +95,25 @@ export default function Index() {
   }>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [fromBalance, setFromBalance] = useState<number | undefined>(undefined);
-  const [toBalance, setToBalance] = useState<number | undefined>(undefined);
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    // Load from localStorage on mount
+    // Load from localStorage on mount and clean old transactions
     if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem("swap-history");
-    return stored ? JSON.parse(stored) : [];
+    try {
+      const stored = localStorage.getItem("swap-history");
+      if (!stored) return [];
+      const all = JSON.parse(stored) as Transaction[];
+      // Remove transactions older than 30 days
+      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+      const cleaned = all.filter(tx => tx.timestamp > thirtyDaysAgo);
+      // Save back cleaned list
+      if (cleaned.length !== all.length) {
+        localStorage.setItem("swap-history", JSON.stringify(cleaned));
+      }
+      return cleaned;
+    } catch (e) {
+      console.error("Failed to load transaction history:", e);
+      return [];
+    }
   });
 
   function resolveMeta(t: Token): {
@@ -292,11 +307,21 @@ export default function Index() {
 
   const priceImpactInfo = getPriceImpactInfo(quoteOut?.priceImpact);
 
+  // Clean old transactions (older than 30 days)
+  const cleanOldTransactions = (txs: Transaction[]) => {
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    return txs.filter(tx => tx.timestamp > thirtyDaysAgo);
+  };
+
   // Save transactions to localStorage
   const saveTransaction = (tx: Transaction) => {
-    const updated = [tx, ...transactions];
-    setTransactions(updated);
-    localStorage.setItem("swap-history", JSON.stringify(updated));
+    const cleaned = cleanOldTransactions([tx, ...transactions]);
+    setTransactions(cleaned);
+    try {
+      localStorage.setItem("swap-history", JSON.stringify(cleaned));
+    } catch (e) {
+      console.error("Failed to save transaction history:", e);
+    }
   };
 
   // Update transaction status
@@ -304,8 +329,13 @@ export default function Index() {
     const updated = transactions.map((tx) =>
       tx.hash === hash ? { ...tx, status } : tx
     );
-    setTransactions(updated);
-    localStorage.setItem("swap-history", JSON.stringify(updated));
+    const cleaned = cleanOldTransactions(updated);
+    setTransactions(cleaned);
+    try {
+      localStorage.setItem("swap-history", JSON.stringify(cleaned));
+    } catch (e) {
+      console.error("Failed to update transaction history:", e);
+    }
   };
 
   async function handleSwap() {
