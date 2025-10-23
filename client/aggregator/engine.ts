@@ -1,7 +1,7 @@
 import { PublicClient } from "viem";
 import { v2Addresses } from "@/amm/v2";
 import { FEE_BPS } from "@/aggregator/config";
-import { fetchOpenOceanQuoteBase, QuoteResult } from "@/aggregator/openocean";
+import { fetch1inchQuote, QuoteResult } from "@/aggregator/oneinch";
 
 const PAIR_ABI = [
   {
@@ -142,27 +142,26 @@ async function quoteLocalV2(
   }
 }
 
-async function quoteOpenOcean(
+async function quote1inch(
   pc: PublicClient,
   inToken: TokenMeta,
   outToken: TokenMeta,
   netIn: bigint,
-  gasPriceWei: bigint,
 ): Promise<AggregatedQuote | null> {
   try {
-    const res: QuoteResult = await fetchOpenOceanQuoteBase({
+    const res: QuoteResult = await fetch1inchQuote({
       inTokenAddress: inToken.address,
       outTokenAddress: outToken.address,
       amountWei: netIn,
-      gasPriceWei,
     });
     return {
-      venue: "openocean",
+      venue: "1inch",
       outAmountWei: res.outAmountWei,
       feeTakenWei: 0n,
       details: res.dataRaw,
     };
-  } catch {
+  } catch (error) {
+    console.warn('1inch quote failed:', error);
     return null;
   }
 }
@@ -176,7 +175,7 @@ export async function getBestAggregatedQuote(
 ): Promise<AggregatedQuote & { venueRaw: AggregatedQuote[] }> {
   const { net, fee } = applyFee(amountIn);
   const quotes = await Promise.all([
-    quoteOpenOcean(pc, inToken, outToken, net, gasPriceWei),
+    quote1inch(pc, inToken, outToken, net),
     quoteLocalV2(pc, inToken, outToken, net),
   ]);
   const candidates = quotes.filter(Boolean) as AggregatedQuote[];

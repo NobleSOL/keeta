@@ -4,8 +4,8 @@ import { DEFAULT_DEADLINE_SEC, FEE_BPS } from "@/aggregator/config";
 import { ERC20_ABI } from "@/lib/erc20";
 import {
   SwapBuildResult,
-  fetchOpenOceanSwapBase,
-} from "@/aggregator/openocean";
+  fetch1inchSwap,
+} from "@/aggregator/oneinch";
 
 export type Address = `0x${string}`;
 export type TokenMeta = {
@@ -228,7 +228,7 @@ export async function executeSwapViaSilverbackV2(
   return { txHash: hash as string };
 }
 
-export async function executeSwapViaOpenOcean(
+export async function executeSwapVia1inch(
   pc: PublicClient,
   writeContractAsync: (args: any) => Promise<any>,
   account: Address,
@@ -238,24 +238,21 @@ export async function executeSwapViaOpenOcean(
   amountIn: bigint,
   quotedOut: bigint,
   slippageBps: number,
-): Promise<{ txHash: string; oo: SwapBuildResult | null }> {
-  const gasPriceWei = await pc.getGasPrice();
+): Promise<{ txHash: string; swap1inch: SwapBuildResult | null }> {
   const { net, fee } = applyFee(amountIn);
 
-  let oo: SwapBuildResult;
+  let swap1inch: SwapBuildResult;
   try {
-    oo = await fetchOpenOceanSwapBase({
+    swap1inch = await fetch1inchSwap({
       inTokenAddress: inToken.address,
       outTokenAddress: outToken.address,
       amountWei: net,
       slippageBps,
       account,
-      gasPriceWei,
     });
   } catch (error: any) {
-    // OpenOcean might not support testnet - provide helpful error
     throw new Error(
-      "OpenOcean aggregation unavailable (testnet not supported). " +
+      "1inch aggregation unavailable. " +
       "Please use tokens with Silverback V2 liquidity pools instead. " +
       "Original error: " + error.message
     );
@@ -281,8 +278,8 @@ export async function executeSwapViaOpenOcean(
         amountIn,
         minAmountOut: minOut,
         to: account,
-        target: oo.to,
-        data: oo.data,
+        target: swap1inch.to,
+        data: swap1inch.data,
         deadline,
         sweep: true,
       },
@@ -291,5 +288,5 @@ export async function executeSwapViaOpenOcean(
     chainId: base.id,
   });
 
-  return { txHash: hash as string, oo };
+  return { txHash: hash as string, swap1inch };
 }
