@@ -268,7 +268,7 @@ export async function executeSwapViaOpenOcean(
     : (quotedOut * BigInt(10_000 - slippageBps)) / 10_000n;
 
   // Apply 5% additional buffer to prevent reverts from price movements and aggregator variance
-  // Aggregator quotes are estimates - actual output can vary based on liquidity/routing at execution time
+  // Aggregator quotes are estimates - actual output can vary based on liquidity and routing at execution time
   const minOut = (baseMinOut * 9500n) / 10_000n;
 
   console.log("🔍 OpenOcean swap execution params:", {
