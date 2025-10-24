@@ -197,6 +197,25 @@ export async function getBestAggregatedQuote(
   const candidates = quotes.filter(Boolean) as AggregatedQuote[];
   if (candidates.length === 0)
     return { venue: "none", outAmountWei: 0n, feeTakenWei: fee, venueRaw: [] };
+
+  // Prefer Silverback V2 when output is competitive (within 1% of best quote)
+  // This incentivizes using your own pools and avoids external aggregator fees
+  const silverbackQuote = candidates.find(q => q.venue === "silverback-v2");
+  const openOceanQuote = candidates.find(q => q.venue === "openocean");
+
+  if (silverbackQuote && openOceanQuote) {
+    // If Silverback output is within 1% of OpenOcean, use Silverback
+    const threshold = (openOceanQuote.outAmountWei * 99n) / 100n; // 99% of OpenOcean quote
+    if (silverbackQuote.outAmountWei >= threshold) {
+      console.log('✅ Using Silverback V2 (within 1% of OpenOcean)', {
+        silverback: silverbackQuote.outAmountWei.toString(),
+        openocean: openOceanQuote.outAmountWei.toString(),
+      });
+      return { ...silverbackQuote, feeTakenWei: fee, venueRaw: candidates };
+    }
+  }
+
+  // Otherwise, use the best quote (highest output)
   const best = candidates.reduce((a, b) =>
     b.outAmountWei > a.outAmountWei ? b : a,
   );
