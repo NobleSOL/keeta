@@ -15,7 +15,7 @@ import { getBestAggregatedQuote } from "@/aggregator/engine";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
 import { base } from "viem/chains";
-import { executeSwapVia1inch, executeSwapViaSilverbackV2, unifiedRouterAddress } from "@/aggregator/execute";
+import { executeSwapViaOpenOcean, executeSwapViaSilverbackV2, unifiedRouterAddress } from "@/aggregator/execute";
 import { toast } from "@/hooks/use-toast";
 
 const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => ({
@@ -426,7 +426,7 @@ export default function Index() {
         );
         txHash = result.txHash;
       } else {
-        // 1inch aggregated swap
+        // OpenOcean aggregated swap
         const router = unifiedRouterAddress();
         if (!router) {
           setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
@@ -436,11 +436,11 @@ export default function Index() {
 
         setSwapStatus("swapping");
         toast({
-          title: "Swapping via 1inch",
+          title: "Swapping via OpenOcean",
           description: "Confirm the transaction in your wallet...",
         });
 
-        const result = await executeSwapVia1inch(
+        const result = await executeSwapViaOpenOcean(
           publicClient,
           writeContractAsync,
           address,
@@ -626,8 +626,8 @@ export default function Index() {
                         </>
                       ) : (
                         <>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">
-                            1inch
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-medium">
+                            OpenOcean
                           </span>
                         </>
                       )}
