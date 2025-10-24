@@ -149,6 +149,22 @@ async function quoteOpenOcean(
   netIn: bigint,
   gasPriceWei: bigint,
 ): Promise<AggregatedQuote | null> {
+  // TEMPORARILY DISABLED: OpenOcean integration is incompatible with router-based fee collection
+  // OpenOcean builds calldata expecting tokens to be in user's wallet (account parameter)
+  // But our UnifiedRouter pulls tokens from user first, then tries to forward to OpenOcean
+  // This causes: ERC20 swaps fail (token → ETH, token → token) because OpenOcean tries to pull from empty user wallet
+  // And: ETH swaps fail (ETH → token) with INSUFFICIENT_OUTPUT because OpenOcean receives less than quoted (after fee)
+  //
+  // To fix this properly, we need to redesign the architecture:
+  // 1. User approves tokens directly to OpenOcean's router
+  // 2. We collect fees after the swap, not before
+  // 3. Or we build custom calldata that works with our router holding the tokens
+  //
+  // For now: Return null to always use Silverback V2 pools
+  console.log('🚫 OpenOcean aggregation temporarily disabled - using Silverback V2 only');
+  return null;
+
+  /* ORIGINAL CODE - DISABLED
   try {
     const res: QuoteResult = await fetchOpenOceanQuoteBase({
       inTokenAddress: inToken.address,
@@ -180,6 +196,7 @@ async function quoteOpenOcean(
     console.warn('OpenOcean quote failed:', error);
     return null;
   }
+  */
 }
 
 export async function getBestAggregatedQuote(

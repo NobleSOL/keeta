@@ -243,15 +243,15 @@ export async function executeSwapViaOpenOcean(
 
   let swapOpenOcean: SwapBuildResult;
   try {
-    // IMPORTANT: Pass user address to OpenOcean
-    // OpenOcean builds the swap calldata for direct execution by the user
-    // Our router will call OpenOcean's target contract on behalf of the user
+    // IMPORTANT: Pass router address to OpenOcean
+    // Our router pulls tokens from user, collects fee, then calls OpenOcean
+    // OpenOcean needs to build calldata that pulls tokens from the router (msg.sender to OpenOcean's contract)
     swapOpenOcean = await fetchOpenOceanSwapBase({
       inTokenAddress: inToken.address,
       outTokenAddress: outToken.address,
       amountWei: net,
       slippageBps,
-      account, // Use user address - OpenOcean needs to know who the final recipient is
+      account: routerAddress, // Use router address - tokens will be in router's wallet
       gasPriceWei: await pc.getGasPrice(),
     });
 
