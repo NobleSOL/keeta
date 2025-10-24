@@ -565,7 +565,7 @@ export default function Index() {
 
       // Show pending toast
       setSwapStatus("waiting");
-      const explorerUrl = `https://sepolia.basescan.org/tx/${txHash}`;
+      const explorerUrl = `https://basescan.org/tx/${txHash}`;
       toast({
         title: "Transaction Submitted",
         description: (

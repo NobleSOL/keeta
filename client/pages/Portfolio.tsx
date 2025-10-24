@@ -433,7 +433,7 @@ export default function Portfolio() {
         ],
       });
 
-      const explorerUrl = `https://sepolia.basescan.org/tx/${tx}`;
+      const explorerUrl = `https://basescan.org/tx/${tx}`;
       toast({
         title: "Transaction Submitted",
         description: (
@@ -510,7 +510,7 @@ export default function Portfolio() {
         ],
       });
 
-      const explorerUrl = `https://sepolia.basescan.org/tx/${tx}`;
+      const explorerUrl = `https://basescan.org/tx/${tx}`;
       toast({
         title: "Transaction Submitted",
         description: (
@@ -589,7 +589,7 @@ export default function Portfolio() {
         ],
       });
 
-      const explorerUrl = `https://sepolia.basescan.org/tx/${tx}`;
+      const explorerUrl = `https://basescan.org/tx/${tx}`;
       toast({
         title: "Transaction Submitted",
         description: (

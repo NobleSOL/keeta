@@ -353,7 +353,7 @@ export default function Pool() {
             });
 
             // Wait for approval confirmation
-            const explorerUrl = `https://sepolia.basescan.org/tx/${approvalHash}`;
+            const explorerUrl = `https://basescan.org/tx/${approvalHash}`;
             toast({
               title: "Waiting for Approval",
               description: (
@@ -398,7 +398,7 @@ export default function Pool() {
             });
 
             // Wait for approval confirmation
-            const explorerUrl = `https://sepolia.basescan.org/tx/${approvalHash}`;
+            const explorerUrl = `https://basescan.org/tx/${approvalHash}`;
             toast({
               title: "Waiting for Approval",
               description: (
@@ -466,7 +466,7 @@ export default function Pool() {
           });
         }
 
-        const explorerUrl = `https://sepolia.basescan.org/tx/${liquidityHash}`;
+        const explorerUrl = `https://basescan.org/tx/${liquidityHash}`;
         toast({
           title: "Transaction Submitted",
           description: (
