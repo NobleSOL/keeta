@@ -253,6 +253,16 @@ export async function executeSwapViaOpenOcean(
       account: routerAddress, // Use router address, not user address
       gasPriceWei: await pc.getGasPrice(),
     });
+
+    // Validate calldata length - short calldata indicates no real route exists
+    // Normal swaps have 200+ bytes of calldata, stub routes have ~68 bytes
+    if (swapOpenOcean.data.length < 100) {
+      console.warn('⚠️  OpenOcean swap rejected: calldata too short (no real route)', {
+        dataLength: swapOpenOcean.data.length,
+        data: swapOpenOcean.data,
+      });
+      throw new Error("OpenOcean: No liquidity available for this swap route");
+    }
   } catch (error: any) {
     throw new Error(
       "OpenOcean aggregation unavailable. " +
