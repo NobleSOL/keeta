@@ -256,9 +256,18 @@ export async function executeSwapViaOpenOcean(
 
     // Validate calldata length - short calldata indicates no real route exists
     // Normal swaps have 200+ bytes of calldata, stub routes have ~68 bytes
-    if (swapOpenOcean.data.length < 100) {
+    // Convert hex string to byte length: (length - 2) / 2 (remove "0x" prefix, then divide by 2)
+    const dataByteLength = (swapOpenOcean.data.length - 2) / 2;
+    console.log('🔍 Checking OpenOcean calldata length:', {
+      dataStringLength: swapOpenOcean.data.length,
+      dataByteLength,
+      data: swapOpenOcean.data,
+      isShort: dataByteLength < 100,
+    });
+
+    if (dataByteLength < 100) {
       console.warn('⚠️  OpenOcean swap rejected: calldata too short (no real route)', {
-        dataLength: swapOpenOcean.data.length,
+        dataByteLength,
         data: swapOpenOcean.data,
       });
       throw new Error("OpenOcean: No liquidity available for this swap route");
