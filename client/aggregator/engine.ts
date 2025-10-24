@@ -68,7 +68,10 @@ async function quoteLocalV2(
   netIn: bigint,
 ): Promise<AggregatedQuote | null> {
   const addrs = v2Addresses();
-  if (!addrs) return null;
+  if (!addrs) {
+    console.log('🔍 Silverback V2: No factory/router addresses configured');
+    return null;
+  }
   try {
     // Convert ETH sentinel to WETH for pair lookup
     const WETH_ADDRESS = "0x4200000000000000000000000000000000000006" as `0x${string}`;
@@ -76,6 +79,12 @@ async function quoteLocalV2(
 
     const inAddr = inToken.address === NATIVE_SENTINEL ? WETH_ADDRESS : (inToken.address as `0x${string}`);
     const outAddr = outToken.address === NATIVE_SENTINEL ? WETH_ADDRESS : (outToken.address as `0x${string}`);
+
+    console.log('🔍 Silverback V2: Looking for pool', {
+      factory: addrs.factory,
+      tokenA: inAddr,
+      tokenB: outAddr,
+    });
 
     const pair = (await pc.readContract({
       address: addrs.factory,
@@ -95,8 +104,14 @@ async function quoteLocalV2(
       args: [inAddr, outAddr],
     })) as `0x${string}`;
 
-    if (!pair || pair === "0x0000000000000000000000000000000000000000")
+    console.log('🔍 Silverback V2: Factory returned pair address:', pair);
+
+    if (!pair || pair === "0x0000000000000000000000000000000000000000") {
+      console.log('❌ Silverback V2: No pool exists for this pair');
       return null;
+    }
+
+    console.log('✅ Silverback V2: Pool found, fetching reserves...');
 
     const [token0, token1] = await Promise.all([
       pc.readContract({
@@ -119,6 +134,16 @@ async function quoteLocalV2(
 
     const [reserveIn, reserveOut] =
       inAddr === token0 ? [r0, r1] : [r1, r0];
+
+    console.log('🔍 Silverback V2: Reserves', {
+      token0,
+      token1,
+      reserve0: r0.toString(),
+      reserve1: r1.toString(),
+      reserveIn: reserveIn.toString(),
+      reserveOut: reserveOut.toString(),
+    });
+
     const out = getAmountOutV2(netIn, reserveIn, reserveOut);
 
     // Calculate price impact
@@ -131,13 +156,20 @@ async function quoteLocalV2(
       ? Number((10000n - (actualPrice * 10000n) / expectedPrice)) / 100
       : 0;
 
+    console.log('✅ Silverback V2: Quote calculated', {
+      inputWei: netIn.toString(),
+      outputWei: out.toString(),
+      priceImpact: priceImpact.toFixed(2) + '%',
+    });
+
     return {
       venue: "silverback-v2",
       outAmountWei: out,
       feeTakenWei: 0n,
       priceImpact: Math.max(0, priceImpact), // Ensure non-negative
     };
-  } catch {
+  } catch (error) {
+    console.error('❌ Silverback V2: Error fetching quote:', error);
     return null;
   }
 }
