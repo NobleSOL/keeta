@@ -397,19 +397,22 @@ export async function executeSwapDirectlyViaOpenOcean(
       spender: swapData.to,
     });
 
-    // If current allowance is less than our amount, approve 2x our amount to handle variance
-    // This is standard practice for aggregators to prevent repeated approvals
-    if (currentAllowance < amountIn) {
-      const approvalAmount = amountIn * 2n;
+    // If current allowance is less than 2x our amount, approve max uint256
+    // This is standard practice for aggregators - prevents repeated approval transactions
+    // OpenOcean's routing may pull varying amounts depending on the path taken
+    const minRequired = amountIn * 2n;
+    if (currentAllowance < minRequired) {
+      // Use max uint256 approval (infinite approval) - standard for aggregators
+      const MAX_UINT256 = 2n ** 256n - 1n;
 
-      console.log(`📝 Requesting approval for ${approvalAmount.toString()} (2x input amount for safety)`);
+      console.log(`📝 Requesting max approval for OpenOcean router (infinite approval)`);
       onStatusChange?.("approving");
 
       const hash = await writeContractAsync({
         address: inAddrForContract,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [swapData.to, approvalAmount],
+        args: [swapData.to, MAX_UINT256],
       });
 
       console.log(`⏳ Waiting for approval transaction: ${hash}`);
