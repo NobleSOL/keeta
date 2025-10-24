@@ -149,6 +149,14 @@ async function quoteOpenOcean(
   netIn: bigint,
   gasPriceWei: bigint,
 ): Promise<AggregatedQuote | null> {
+  // Skip OpenOcean for KTA token - known to return stub calldata
+  const KTA_ADDRESS = "0xc0634090F2Fe6c6d75e61Be2b949464aBB498973";
+  if (inToken.address.toLowerCase() === KTA_ADDRESS.toLowerCase() ||
+      outToken.address.toLowerCase() === KTA_ADDRESS.toLowerCase()) {
+    console.log('⏭️  Skipping OpenOcean for KTA token, using Silverback V2');
+    return null;
+  }
+
   try {
     const res: QuoteResult = await fetchOpenOceanQuoteBase({
       inTokenAddress: inToken.address,
