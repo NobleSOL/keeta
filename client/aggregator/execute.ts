@@ -339,3 +339,62 @@ export async function executeSwapViaOpenOcean(
 
   return { txHash: hash as string, swapOpenOcean };
 }
+
+// Direct OpenOcean integration for Token → ETH and Token → Token swaps
+// NO FEE COLLECTION - user calls OpenOcean directly
+// Use this when router-based fee collection breaks (ERC20 input swaps)
+export async function executeSwapDirectlyViaOpenOcean(
+  pc: PublicClient,
+  writeContractAsync: (args: any) => Promise<any>,
+  account: Address,
+  inToken: TokenMeta,
+  outToken: TokenMeta,
+  amountIn: bigint,
+  slippageBps: number,
+  onStatusChange?: (status: "checking" | "approving" | "confirming" | "complete") => void,
+): Promise<{ txHash: string }> {
+  console.log('🚀 executeSwapDirectlyViaOpenOcean (no fee):', {
+    inToken: inToken.address,
+    outToken: outToken.address,
+    amountIn: amountIn.toString(),
+  });
+
+  // Get swap calldata from OpenOcean with user as the caller
+  const swapData = await fetchOpenOceanSwapBase({
+    inTokenAddress: inToken.address,
+    outTokenAddress: outToken.address,
+    amountWei: amountIn, // Full amount, no fee deduction
+    slippageBps,
+    account, // User address - user calls OpenOcean directly
+    gasPriceWei: await pc.getGasPrice(),
+  });
+
+  const isNative = inToken.address === NATIVE_SENTINEL;
+  const inAddrForContract = isNative ? (ZERO_ADDRESS as Address) : (inToken.address as Address);
+
+  // For ERC20, approve to OpenOcean's router
+  if (!isNative) {
+    await ensureAllowance(
+      pc,
+      writeContractAsync,
+      inAddrForContract,
+      account,
+      swapData.to, // Approve to OpenOcean's router
+      amountIn,
+      onStatusChange,
+    );
+  }
+
+  console.log('✅ Calling OpenOcean router directly (no intermediary)');
+
+  // Call OpenOcean directly using raw transaction
+  const hash = await writeContractAsync({
+    address: swapData.to,
+    abi: [],
+    data: swapData.data,
+    value: isNative ? amountIn : 0n,
+    chainId: base.id,
+  });
+
+  return { txHash: hash as string };
+}

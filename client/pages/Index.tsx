@@ -15,7 +15,7 @@ import { getBestAggregatedQuote } from "@/aggregator/engine";
 import { ERC20_ABI } from "@/lib/erc20";
 import { formatUnits } from "viem";
 import { base } from "viem/chains";
-import { executeSwapViaOpenOcean, executeSwapViaSilverbackV2, unifiedRouterAddress } from "@/aggregator/execute";
+import { executeSwapViaOpenOcean, executeSwapViaSilverbackV2, executeSwapDirectlyViaOpenOcean, unifiedRouterAddress } from "@/aggregator/execute";
 import { toast } from "@/hooks/use-toast";
 
 const TOKENS: Token[] = ["ETH", "USDC", "SBCK", "WBTC", "KTA"].map((sym) => ({
@@ -426,49 +426,32 @@ export default function Index() {
         );
         txHash = result.txHash;
       } else {
-        // OpenOcean aggregated swap with automatic V2 fallback
-        const router = unifiedRouterAddress();
-        if (!router) {
-          setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
-          setSwapStatus("idle");
-          return;
-        }
+        // OpenOcean aggregated swap with hybrid execution:
+        // - ETH swaps: Use router (collects 0.3% fee)
+        // - Token swaps: Direct OpenOcean (no fee, but they work)
+        const isEthInput = fromToken.symbol === "ETH";
 
-        setSwapStatus("swapping");
-        toast({
-          title: "Swapping via OpenOcean",
-          description: "Confirm the transaction in your wallet...",
-        });
+        if (isEthInput) {
+          // ETH → Token swap via UnifiedRouter (with 0.3% fee)
+          const router = unifiedRouterAddress();
+          if (!router) {
+            setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
+            setSwapStatus("idle");
+            return;
+          }
 
-        try {
-          const result = await executeSwapViaOpenOcean(
-            publicClient,
-            writeContractAsync,
-            address,
-            router,
-            { address: inMeta.address, decimals: inMeta.decimals },
-            { address: outMeta.address, decimals: outMeta.decimals },
-            amountWei,
-            quoteOut.wei,
-            Math.round(slippage * 100),
-          );
-          txHash = result.txHash;
-        } catch (openOceanError: any) {
-          // If OpenOcean fails (e.g., short calldata/no liquidity), try falling back to Silverback V2
-          const errorMessage = openOceanError?.message || String(openOceanError);
-          if (errorMessage.includes("No liquidity available") || errorMessage.includes("calldata too short")) {
-            console.warn("⚠️  OpenOcean failed, falling back to Silverback V2:", errorMessage);
+          setSwapStatus("swapping");
+          toast({
+            title: "Swapping via OpenOcean",
+            description: "Confirm the transaction in your wallet...",
+          });
 
-            toast({
-              title: "Routing via Silverback V2",
-              description: "OpenOcean unavailable, using Silverback liquidity...",
-            });
-
-            // Fall back to V2
-            const result = await executeSwapViaSilverbackV2(
+          try {
+            const result = await executeSwapViaOpenOcean(
               publicClient,
               writeContractAsync,
               address,
+              router,
               { address: inMeta.address, decimals: inMeta.decimals },
               { address: outMeta.address, decimals: outMeta.decimals },
               amountWei,
@@ -476,9 +459,87 @@ export default function Index() {
               Math.round(slippage * 100),
             );
             txHash = result.txHash;
-          } else {
-            // If it's a different error (user rejected, etc.), re-throw
-            throw openOceanError;
+          } catch (openOceanError: any) {
+            // If OpenOcean fails, try falling back to Silverback V2
+            const errorMessage = openOceanError?.message || String(openOceanError);
+            if (errorMessage.includes("No liquidity available") || errorMessage.includes("calldata too short")) {
+              console.warn("⚠️  OpenOcean failed, falling back to Silverback V2:", errorMessage);
+
+              toast({
+                title: "Routing via Silverback V2",
+                description: "OpenOcean unavailable, using Silverback liquidity...",
+              });
+
+              const result = await executeSwapViaSilverbackV2(
+                publicClient,
+                writeContractAsync,
+                address,
+                { address: inMeta.address, decimals: inMeta.decimals },
+                { address: outMeta.address, decimals: outMeta.decimals },
+                amountWei,
+                quoteOut.wei,
+                Math.round(slippage * 100),
+              );
+              txHash = result.txHash;
+            } else {
+              // If it's a different error (user rejected, etc.), re-throw
+              throw openOceanError;
+            }
+          }
+        } else {
+          // Token → * swap via direct OpenOcean (no fee collection)
+          setSwapStatus("swapping");
+          toast({
+            title: "Swapping via OpenOcean",
+            description: "No protocol fee on this swap. Confirm transaction...",
+          });
+
+          try {
+            const result = await executeSwapDirectlyViaOpenOcean(
+              publicClient,
+              writeContractAsync,
+              address,
+              { address: inMeta.address, decimals: inMeta.decimals },
+              { address: outMeta.address, decimals: outMeta.decimals },
+              amountWei,
+              Math.round(slippage * 100),
+              (status) => {
+                if (status === "approving") {
+                  setSwapStatus("approving");
+                } else if (status === "confirming") {
+                  setSwapStatus("confirming");
+                } else if (status === "complete") {
+                  setSwapStatus("swapping");
+                }
+              },
+            );
+            txHash = result.txHash;
+          } catch (openOceanError: any) {
+            // If OpenOcean fails, try falling back to Silverback V2
+            const errorMessage = openOceanError?.message || String(openOceanError);
+            if (errorMessage.includes("No liquidity available") || errorMessage.includes("calldata too short")) {
+              console.warn("⚠️  OpenOcean failed, falling back to Silverback V2:", errorMessage);
+
+              toast({
+                title: "Routing via Silverback V2",
+                description: "OpenOcean unavailable, using Silverback liquidity...",
+              });
+
+              const result = await executeSwapViaSilverbackV2(
+                publicClient,
+                writeContractAsync,
+                address,
+                { address: inMeta.address, decimals: inMeta.decimals },
+                { address: outMeta.address, decimals: outMeta.decimals },
+                amountWei,
+                quoteOut.wei,
+                Math.round(slippage * 100),
+              );
+              txHash = result.txHash;
+            } else {
+              // If it's a different error (user rejected, etc.), re-throw
+              throw openOceanError;
+            }
           }
         }
       }
