@@ -76,7 +76,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
 
             {/* Explorer Link */}
             <a
-              href={`https://sepolia.basescan.org/tx/${tx.hash}`}
+              href={`https://basescan.org/tx/${tx.hash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-sky-400 transition-colors"
