@@ -232,7 +232,7 @@ export async function executeSwapViaOpenOcean(
   pc: PublicClient,
   writeContractAsync: (args: any) => Promise<any>,
   account: Address,
-  router: Address,
+  routerAddress: Address,
   inToken: TokenMeta,
   outToken: TokenMeta,
   amountIn: bigint,
@@ -250,7 +250,7 @@ export async function executeSwapViaOpenOcean(
       outTokenAddress: outToken.address,
       amountWei: net,
       slippageBps,
-      account: router, // Use router address, not user address
+      account: routerAddress, // Use router address, not user address
       gasPriceWei: await pc.getGasPrice(),
     });
   } catch (error: any) {
@@ -287,11 +287,11 @@ export async function executeSwapViaOpenOcean(
   const inAddrForContract = isNative ? (ZERO_ADDRESS as Address) : (inToken.address as Address);
 
   if (!isNative) {
-    await ensureAllowance(pc, writeContractAsync, inAddrForContract, account, router, amountIn);
+    await ensureAllowance(pc, writeContractAsync, inAddrForContract, account, routerAddress, amountIn);
   }
 
   const hash = await writeContractAsync({
-    address: router,
+    address: routerAddress,
     abi: UNIFIED_ROUTER_ABI,
     functionName: "swapAndForward",
     args: [
