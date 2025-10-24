@@ -426,7 +426,7 @@ export default function Index() {
         );
         txHash = result.txHash;
       } else {
-        // OpenOcean aggregated swap
+        // OpenOcean aggregated swap with automatic V2 fallback
         const router = unifiedRouterAddress();
         if (!router) {
           setQuoteError("Set VITE_SB_UNIFIED_ROUTER env to the deployed router address");
@@ -440,18 +440,47 @@ export default function Index() {
           description: "Confirm the transaction in your wallet...",
         });
 
-        const result = await executeSwapViaOpenOcean(
-          publicClient,
-          writeContractAsync,
-          address,
-          router,
-          { address: inMeta.address, decimals: inMeta.decimals },
-          { address: outMeta.address, decimals: outMeta.decimals },
-          amountWei,
-          quoteOut.wei,
-          Math.round(slippage * 100),
-        );
-        txHash = result.txHash;
+        try {
+          const result = await executeSwapViaOpenOcean(
+            publicClient,
+            writeContractAsync,
+            address,
+            router,
+            { address: inMeta.address, decimals: inMeta.decimals },
+            { address: outMeta.address, decimals: outMeta.decimals },
+            amountWei,
+            quoteOut.wei,
+            Math.round(slippage * 100),
+          );
+          txHash = result.txHash;
+        } catch (openOceanError: any) {
+          // If OpenOcean fails (e.g., short calldata/no liquidity), try falling back to Silverback V2
+          const errorMessage = openOceanError?.message || String(openOceanError);
+          if (errorMessage.includes("No liquidity available") || errorMessage.includes("calldata too short")) {
+            console.warn("⚠️  OpenOcean failed, falling back to Silverback V2:", errorMessage);
+
+            toast({
+              title: "Routing via Silverback V2",
+              description: "OpenOcean unavailable, using Silverback liquidity...",
+            });
+
+            // Fall back to V2
+            const result = await executeSwapViaSilverbackV2(
+              publicClient,
+              writeContractAsync,
+              address,
+              { address: inMeta.address, decimals: inMeta.decimals },
+              { address: outMeta.address, decimals: outMeta.decimals },
+              amountWei,
+              quoteOut.wei,
+              Math.round(slippage * 100),
+            );
+            txHash = result.txHash;
+          } else {
+            // If it's a different error (user rejected, etc.), re-throw
+            throw openOceanError;
+          }
+        }
       }
 
       // Save transaction to history (pending state)
