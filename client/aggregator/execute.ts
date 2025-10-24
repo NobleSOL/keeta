@@ -373,26 +373,54 @@ export async function executeSwapDirectlyViaOpenOcean(
   const isNative = inToken.address === NATIVE_SENTINEL;
   const inAddrForContract = isNative ? (ZERO_ADDRESS as Address) : (inToken.address as Address);
 
-  // Use OpenOcean's actual inAmount if available, otherwise use our amountIn
-  const actualAmountIn = swapData.inAmountWei && swapData.inAmountWei > 0n ? swapData.inAmountWei : amountIn;
-
-  console.log('📊 Approval amount comparison:', {
-    ourAmount: amountIn.toString(),
-    openOceanAmount: swapData.inAmountWei?.toString(),
-    usingAmount: actualAmountIn.toString(),
-  });
-
-  // For ERC20, approve to OpenOcean's router
+  // For ERC20, we need to check current allowance and read what OpenOcean's contract will actually pull
+  // The safest approach is to approve a slightly higher amount than our input to handle routing variance
+  // Most aggregators use max approval or a buffer to handle this
   if (!isNative) {
-    await ensureAllowance(
-      pc,
-      writeContractAsync,
-      inAddrForContract,
-      account,
-      swapData.to, // Approve to OpenOcean's router
-      actualAmountIn, // Use OpenOcean's exact amount
-      onStatusChange,
-    );
+    // Read current allowance first
+    let currentAllowance = 0n;
+    try {
+      currentAllowance = (await pc.readContract({
+        address: inAddrForContract,
+        abi: ERC20_ABI,
+        functionName: "allowance",
+        args: [account, swapData.to],
+      })) as bigint;
+    } catch (e) {
+      console.warn("Could not read current allowance:", e);
+    }
+
+    console.log('📊 OpenOcean approval check:', {
+      ourAmount: amountIn.toString(),
+      openOceanInAmount: swapData.inAmountWei?.toString(),
+      currentAllowance: currentAllowance.toString(),
+      spender: swapData.to,
+    });
+
+    // If current allowance is less than our amount, approve 2x our amount to handle variance
+    // This is standard practice for aggregators to prevent repeated approvals
+    if (currentAllowance < amountIn) {
+      const approvalAmount = amountIn * 2n;
+
+      console.log(`📝 Requesting approval for ${approvalAmount.toString()} (2x input amount for safety)`);
+      onStatusChange?.("approving");
+
+      const hash = await writeContractAsync({
+        address: inAddrForContract,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [swapData.to, approvalAmount],
+      });
+
+      console.log(`⏳ Waiting for approval transaction: ${hash}`);
+      onStatusChange?.("confirming");
+      await pc.waitForTransactionReceipt({ hash: hash as `0x${string}` });
+      console.log("✅ Approval confirmed");
+      onStatusChange?.("complete");
+    } else {
+      console.log("✅ Sufficient allowance already exists");
+      onStatusChange?.("complete");
+    }
   }
 
   console.log('✅ Calling OpenOcean router directly (no intermediary)');
