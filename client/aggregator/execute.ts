@@ -373,6 +373,15 @@ export async function executeSwapDirectlyViaOpenOcean(
   const isNative = inToken.address === NATIVE_SENTINEL;
   const inAddrForContract = isNative ? (ZERO_ADDRESS as Address) : (inToken.address as Address);
 
+  // Use OpenOcean's actual inAmount if available, otherwise use our amountIn
+  const actualAmountIn = swapData.inAmountWei && swapData.inAmountWei > 0n ? swapData.inAmountWei : amountIn;
+
+  console.log('📊 Approval amount comparison:', {
+    ourAmount: amountIn.toString(),
+    openOceanAmount: swapData.inAmountWei?.toString(),
+    usingAmount: actualAmountIn.toString(),
+  });
+
   // For ERC20, approve to OpenOcean's router
   if (!isNative) {
     await ensureAllowance(
@@ -381,7 +390,7 @@ export async function executeSwapDirectlyViaOpenOcean(
       inAddrForContract,
       account,
       swapData.to, // Approve to OpenOcean's router
-      amountIn,
+      actualAmountIn, // Use OpenOcean's exact amount
       onStatusChange,
     );
   }

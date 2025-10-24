@@ -62,6 +62,7 @@ export type SwapBuildResult = {
   to: `0x${string}`;
   data: `0x${string}`;
   value: bigint;
+  inAmountWei?: bigint;
   outAmountWei?: bigint;
   raw: any;
 };
@@ -103,6 +104,9 @@ export async function fetchOpenOceanSwapBase({
   const to = (data?.to || data?.tx?.to) as `0x${string}`;
   const dataHex = (data?.data || data?.tx?.data) as `0x${string}`;
   const valueRaw = data?.value ?? data?.tx?.value ?? "0";
+  const inAmount = BigInt(
+    data?.inAmount || data?.fromAmount || data?.amountIn || 0,
+  );
   const outAmount = BigInt(
     data?.outAmount || data?.toAmount || data?.amountOut || 0,
   );
@@ -123,7 +127,7 @@ export async function fetchOpenOceanSwapBase({
       return 0n;
     }
   })();
-  return { to, data: dataHex, value, outAmountWei: outAmount, raw: json };
+  return { to, data: dataHex, value, inAmountWei: inAmount, outAmountWei: outAmount, raw: json };
 }
 
 export function toWei(amount: string, decimals: number): bigint {
