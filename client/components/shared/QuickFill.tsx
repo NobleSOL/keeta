@@ -11,7 +11,10 @@ export default function QuickFill({
 }) {
   if (balance == null) return null;
   const handle = (p: number) => {
-    const v = (balance * (p / 100)).toString();
+    // For 100%, use 99.9% to account for precision/rounding issues with aggregators
+    // This prevents "transfer amount exceeds balance" errors when swapping max balance
+    const actualPercent = p === 100 ? 99.9 : p;
+    const v = (balance * (actualPercent / 100)).toString();
     onSelect(v);
   };
   return (
