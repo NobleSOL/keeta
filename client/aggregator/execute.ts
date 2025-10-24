@@ -405,9 +405,25 @@ export async function executeSwapDirectlyViaOpenOcean(
       // Use max uint256 approval (infinite approval) - standard for aggregators
       const MAX_UINT256 = 2n ** 256n - 1n;
 
-      console.log(`📝 Requesting max approval for OpenOcean router (infinite approval)`);
       onStatusChange?.("approving");
 
+      // Some tokens (USDT, KTA, etc.) don't allow changing allowance from non-zero to non-zero
+      // This is a security feature to prevent front-running attacks
+      // Solution: Reset to 0 first, then set to max
+      if (currentAllowance > 0n) {
+        console.log(`📝 Resetting allowance to 0 first (current: ${currentAllowance.toString()})`);
+        const resetHash = await writeContractAsync({
+          address: inAddrForContract,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [swapData.to, 0n],
+        });
+        console.log(`⏳ Waiting for reset transaction: ${resetHash}`);
+        await pc.waitForTransactionReceipt({ hash: resetHash as `0x${string}` });
+        console.log("✅ Allowance reset to 0");
+      }
+
+      console.log(`📝 Requesting max approval for OpenOcean router (infinite approval)`);
       const hash = await writeContractAsync({
         address: inAddrForContract,
         abi: ERC20_ABI,
