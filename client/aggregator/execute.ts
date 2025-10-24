@@ -239,6 +239,14 @@ export async function executeSwapViaOpenOcean(
   quotedOut: bigint,
   slippageBps: number,
 ): Promise<{ txHash: string; swapOpenOcean: SwapBuildResult | null }> {
+  console.log('🚀 executeSwapViaOpenOcean called:', {
+    inToken: inToken.address,
+    outToken: outToken.address,
+    amountIn: amountIn.toString(),
+    account,
+    routerAddress,
+  });
+
   const { net, fee } = applyFee(amountIn);
 
   let swapOpenOcean: SwapBuildResult;
