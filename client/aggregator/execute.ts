@@ -346,6 +346,7 @@ export async function executeSwapViaOpenOcean(
 export async function executeSwapDirectlyViaOpenOcean(
   pc: PublicClient,
   writeContractAsync: (args: any) => Promise<any>,
+  sendTransactionAsync: (args: any) => Promise<any>,
   account: Address,
   inToken: TokenMeta,
   outToken: TokenMeta,
@@ -387,10 +388,9 @@ export async function executeSwapDirectlyViaOpenOcean(
 
   console.log('✅ Calling OpenOcean router directly (no intermediary)');
 
-  // Call OpenOcean directly using raw transaction
-  const hash = await writeContractAsync({
-    address: swapData.to,
-    abi: [],
+  // Call OpenOcean directly using sendTransaction for raw calldata
+  const hash = await sendTransactionAsync({
+    to: swapData.to,
     data: swapData.data,
     value: isNative ? amountIn : 0n,
     chainId: base.id,

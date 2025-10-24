@@ -8,7 +8,7 @@ import { ArrowDownUp } from "lucide-react";
 import TrendingPills from "@/components/shared/TrendingPills";
 import QuickFill from "@/components/shared/QuickFill";
 import { tokenBySymbol, TOKEN_META } from "@/lib/tokens";
-import { useAccount, useConnect, usePublicClient, useWriteContract } from "wagmi";
+import { useAccount, useConnect, usePublicClient, useWriteContract, useSendTransaction } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
 import { toWei, fromWei } from "@/aggregator/openocean";
 import { getBestAggregatedQuote } from "@/aggregator/engine";
@@ -54,6 +54,7 @@ export default function Index() {
   const { address, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
   const { writeContractAsync, isPending: isWriting } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
 
   const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
 
@@ -498,6 +499,7 @@ export default function Index() {
             const result = await executeSwapDirectlyViaOpenOcean(
               publicClient,
               writeContractAsync,
+              sendTransactionAsync,
               address,
               { address: inMeta.address, decimals: inMeta.decimals },
               { address: outMeta.address, decimals: outMeta.decimals },
