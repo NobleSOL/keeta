@@ -53,10 +53,6 @@ export const wagmiConfig = createConfig({
   connectors: [
     injected({
       shimDisconnect: true,
-      target: {
-        id: 'base',
-        name: 'Base Network',
-      },
     }),
     ...(enableCoinbase
       ? [coinbaseWallet({
