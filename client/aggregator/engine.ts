@@ -227,6 +227,16 @@ export async function getBestAggregatedQuote(
     quoteLocalV2(pc, inToken, outToken, net),
   ]);
   const candidates = quotes.filter(Boolean) as AggregatedQuote[];
+
+  console.log('📊 All quotes received:', {
+    candidateCount: candidates.length,
+    quotes: candidates.map(q => ({
+      venue: q.venue,
+      output: q.outAmountWei.toString(),
+      priceImpact: q.priceImpact,
+    }))
+  });
+
   if (candidates.length === 0)
     return { venue: "none", outAmountWei: 0n, feeTakenWei: fee, venueRaw: [] };
 
@@ -238,12 +248,21 @@ export async function getBestAggregatedQuote(
   if (silverbackQuote && openOceanQuote) {
     // If Silverback output is within 1% of OpenOcean, use Silverback
     const threshold = (openOceanQuote.outAmountWei * 99n) / 100n; // 99% of OpenOcean quote
+    const priceDiffPercent = Number((openOceanQuote.outAmountWei - silverbackQuote.outAmountWei) * 10000n / openOceanQuote.outAmountWei) / 100;
+
+    console.log('🔍 Comparing Silverback vs OpenOcean:', {
+      silverback: silverbackQuote.outAmountWei.toString(),
+      openocean: openOceanQuote.outAmountWei.toString(),
+      threshold99Percent: threshold.toString(),
+      priceDifference: priceDiffPercent.toFixed(2) + '%',
+      silverbackMeetsThreshold: silverbackQuote.outAmountWei >= threshold,
+    });
+
     if (silverbackQuote.outAmountWei >= threshold) {
-      console.log('✅ Using Silverback V2 (within 1% of OpenOcean)', {
-        silverback: silverbackQuote.outAmountWei.toString(),
-        openocean: openOceanQuote.outAmountWei.toString(),
-      });
+      console.log('✅ Using Silverback V2 (within 1% of OpenOcean)');
       return { ...silverbackQuote, feeTakenWei: fee, venueRaw: candidates };
+    } else {
+      console.log('⚠️  Using OpenOcean (Silverback price difference exceeds 1% threshold)');
     }
   }
 
@@ -251,5 +270,6 @@ export async function getBestAggregatedQuote(
   const best = candidates.reduce((a, b) =>
     b.outAmountWei > a.outAmountWei ? b : a,
   );
+  console.log('✅ Selected venue:', best.venue, 'with output:', best.outAmountWei.toString());
   return { ...best, feeTakenWei: fee, venueRaw: candidates };
 }
