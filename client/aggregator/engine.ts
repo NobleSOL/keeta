@@ -156,6 +156,20 @@ async function quoteOpenOcean(
       amountWei: netIn,
       gasPriceWei,
     });
+
+    // Sanity check: Reject quotes that are suspiciously small (< 0.0001% of input)
+    // This indicates OpenOcean doesn't actually have a good route
+    // Example: 1 ETH in should get at least 0.000001 ETH equivalent out
+    const minReasonableOutput = netIn / 1_000_000n; // 0.0001% of input
+    if (res.outAmountWei < minReasonableOutput) {
+      console.warn('⚠️  OpenOcean quote rejected: output too small', {
+        inAmount: netIn.toString(),
+        outAmount: res.outAmountWei.toString(),
+        minExpected: minReasonableOutput.toString(),
+      });
+      return null;
+    }
+
     return {
       venue: "openocean",
       outAmountWei: res.outAmountWei,
