@@ -340,6 +340,24 @@ export default function Pool() {
           })) as bigint;
 
           if (allowanceA < amtAWei) {
+            // Some tokens (USDT, KTA, etc.) don't allow changing allowance from non-zero to non-zero
+            // Reset to 0 first if current allowance is non-zero
+            if (allowanceA > 0n) {
+              toast({
+                title: "Resetting Approval",
+                description: `Resetting ${tokenA.symbol} allowance to 0...`,
+              });
+
+              const resetHash = await writeContractAsync({
+                address: addrA,
+                abi: ERC20_ABI,
+                functionName: "approve",
+                args: [addrs.router, 0n],
+              });
+
+              await publicClient.waitForTransactionReceipt({ hash: resetHash as `0x${string}` });
+            }
+
             toast({
               title: "Approval Required",
               description: `Approving ${tokenA.symbol}...`,
@@ -385,6 +403,24 @@ export default function Pool() {
           })) as bigint;
 
           if (allowanceB < amtBWei) {
+            // Some tokens (USDT, KTA, etc.) don't allow changing allowance from non-zero to non-zero
+            // Reset to 0 first if current allowance is non-zero
+            if (allowanceB > 0n) {
+              toast({
+                title: "Resetting Approval",
+                description: `Resetting ${tokenB.symbol} allowance to 0...`,
+              });
+
+              const resetHash = await writeContractAsync({
+                address: addrB,
+                abi: ERC20_ABI,
+                functionName: "approve",
+                args: [addrs.router, 0n],
+              });
+
+              await publicClient.waitForTransactionReceipt({ hash: resetHash as `0x${string}` });
+            }
+
             toast({
               title: "Approval Required",
               description: `Approving ${tokenB.symbol}...`,
