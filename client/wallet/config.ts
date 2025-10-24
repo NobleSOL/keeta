@@ -51,9 +51,19 @@ export const wagmiConfig = createConfig({
     [mainnet.id]: http(),
   },
   connectors: [
-    injected({ shimDisconnect: true }),
+    injected({
+      shimDisconnect: true,
+      target: {
+        id: 'base',
+        name: 'Base Network',
+      },
+    }),
     ...(enableCoinbase
-      ? [coinbaseWallet({ appName, appLogoUrl: appIcon })]
+      ? [coinbaseWallet({
+          appName,
+          appLogoUrl: appIcon,
+          preference: 'smartWalletOnly',
+        })]
       : []),
     ...(enableWalletConnect
       ? [
@@ -65,10 +75,10 @@ export const wagmiConfig = createConfig({
               url: siteUrl,
               icons: [appIcon],
             },
+            showQrModal: true,
           }),
         ]
       : []),
   ],
-  // Avoid auto reconnecting to connectors that may require COOP/CORS on previews
-  autoConnect: false,
+  multiInjectedProviderDiscovery: false,
 });

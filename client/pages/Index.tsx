@@ -8,7 +8,7 @@ import { ArrowDownUp } from "lucide-react";
 import TrendingPills from "@/components/shared/TrendingPills";
 import QuickFill from "@/components/shared/QuickFill";
 import { tokenBySymbol, TOKEN_META } from "@/lib/tokens";
-import { useAccount, useConnect, usePublicClient, useWriteContract, useSendTransaction } from "wagmi";
+import { useAccount, useConnect, usePublicClient, useWriteContract, useSendTransaction, useSwitchChain, useChainId } from "wagmi";
 import { useTokenList } from "@/hooks/useTokenList";
 import { toWei, fromWei } from "@/aggregator/openocean";
 import { getBestAggregatedQuote } from "@/aggregator/engine";
@@ -55,12 +55,16 @@ export default function Index() {
   const { connectors, connect } = useConnect();
   const { writeContractAsync, isPending: isWriting } = useWriteContract();
   const { sendTransactionAsync } = useSendTransaction();
+  const { switchChain } = useSwitchChain();
+  const chainId = useChainId();
 
   const [swapStatus, setSwapStatus] = useState<"idle" | "checking" | "approving" | "confirming" | "swapping" | "waiting">("idle");
 
   const cta = useMemo(() => {
     if (!isConnected)
       return { label: "Connect Wallet", disabled: false } as const;
+    if (chainId !== base.id)
+      return { label: "Switch to Base", disabled: false } as const;
     if (swapStatus !== "idle") {
       const statusLabels = {
         checking: "Checking allowance...",
@@ -781,6 +785,7 @@ export default function Index() {
                 disabled={cta.disabled}
                 onClick={() => {
                   if (!isConnected) connectPreferred();
+                  else if (chainId !== base.id) switchChain({ chainId: base.id });
                   else handleSwap();
                 }}
               >
