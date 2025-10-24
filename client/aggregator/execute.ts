@@ -273,11 +273,8 @@ export async function executeSwapViaOpenOcean(
       throw new Error("OpenOcean: No liquidity available for this swap route");
     }
   } catch (error: any) {
-    throw new Error(
-      "OpenOcean aggregation unavailable. " +
-      "Please use tokens with Silverback V2 liquidity pools instead. " +
-      "Original error: " + error.message
-    );
+    // Re-throw the error as-is so Index.tsx fallback can detect it
+    throw error;
   }
 
   // Use OpenOcean's actual outAmount for minOut calculation, with additional buffer for execution variance
