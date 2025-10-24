@@ -4,8 +4,8 @@ import { DEFAULT_DEADLINE_SEC, FEE_BPS } from "@/aggregator/config";
 import { ERC20_ABI } from "@/lib/erc20";
 import {
   SwapBuildResult,
-  fetch1inchSwap,
-} from "@/aggregator/oneinch";
+  fetchOpenOceanSwapBase,
+} from "@/aggregator/openocean";
 
 export type Address = `0x${string}`;
 export type TokenMeta = {
@@ -93,9 +93,9 @@ export async function ensureAllowance(
   onStatusChange?.("complete");
 }
 
-function applyFee(amountIn: bigint): { net: bigint } {
+function applyFee(amountIn: bigint): { net: bigint; fee: bigint } {
   const fee = (amountIn * BigInt(FEE_BPS)) / 10_000n;
-  return { net: amountIn - fee };
+  return { net: amountIn - fee, fee };
 }
 
 const UNIFIED_ROUTER_V2_ABI = [
@@ -228,7 +228,7 @@ export async function executeSwapViaSilverbackV2(
   return { txHash: hash as string };
 }
 
-export async function executeSwapVia1inch(
+export async function executeSwapViaOpenOcean(
   pc: PublicClient,
   writeContractAsync: (args: any) => Promise<any>,
   account: Address,
@@ -238,27 +238,50 @@ export async function executeSwapVia1inch(
   amountIn: bigint,
   quotedOut: bigint,
   slippageBps: number,
-): Promise<{ txHash: string; swap1inch: SwapBuildResult | null }> {
+): Promise<{ txHash: string; swapOpenOcean: SwapBuildResult | null }> {
   const { net, fee } = applyFee(amountIn);
 
-  let swap1inch: SwapBuildResult;
+  let swapOpenOcean: SwapBuildResult;
   try {
-    swap1inch = await fetch1inchSwap({
+    // CRITICAL: Pass router address, not user address!
+    // OpenOcean needs to know the actual caller (router) so it returns tokens to the router
+    swapOpenOcean = await fetchOpenOceanSwapBase({
       inTokenAddress: inToken.address,
       outTokenAddress: outToken.address,
       amountWei: net,
       slippageBps,
-      account,
+      account: router, // Use router address, not user address
+      gasPriceWei: await pc.getGasPrice(),
     });
   } catch (error: any) {
     throw new Error(
-      "1inch aggregation unavailable. " +
+      "OpenOcean aggregation unavailable. " +
       "Please use tokens with Silverback V2 liquidity pools instead. " +
       "Original error: " + error.message
     );
   }
 
-  const minOut = (quotedOut * BigInt(10_000 - slippageBps)) / 10_000n;
+  // Use OpenOcean's actual outAmount for minOut calculation, with additional buffer for execution variance
+  // OpenOcean applies slippage, but we add safety margin for price movement and routing differences
+  const baseMinOut = swapOpenOcean.outAmountWei && swapOpenOcean.outAmountWei > 0n
+    ? swapOpenOcean.outAmountWei
+    : (quotedOut * BigInt(10_000 - slippageBps)) / 10_000n;
+
+  // Apply 5% additional buffer to prevent reverts from price movements and aggregator variance
+  // Aggregator quotes are estimates - actual output can vary based on liquidity/routing at execution time
+  const minOut = (baseMinOut * 9500n) / 10_000n;
+
+  console.log("🔍 OpenOcean swap execution params:", {
+    amountIn: amountIn.toString(),
+    net: net.toString(),
+    fee: fee.toString(),
+    quotedOut: quotedOut.toString(),
+    openOceanOutAmountWei: swapOpenOcean.outAmountWei?.toString(),
+    calculatedMinOut: minOut.toString(),
+    slippageBps,
+    target: swapOpenOcean.to,
+  });
+
   const deadline = BigInt(Math.floor(Date.now() / 1000) + DEFAULT_DEADLINE_SEC);
   const isNative = inToken.address === NATIVE_SENTINEL;
   const inAddrForContract = isNative ? (ZERO_ADDRESS as Address) : (inToken.address as Address);
@@ -278,15 +301,15 @@ export async function executeSwapVia1inch(
         amountIn,
         minAmountOut: minOut,
         to: account,
-        target: swap1inch.to,
-        data: swap1inch.data,
+        target: swapOpenOcean.to,
+        data: swapOpenOcean.data,
         deadline,
         sweep: true,
       },
     ],
-    value: isNative ? net : 0n, // Send net amount (after fee) for ETH swaps
+    value: isNative ? amountIn : 0n, // Send full amount - router deducts fee internally
     chainId: base.id,
   });
 
-  return { txHash: hash as string, swap1inch };
+  return { txHash: hash as string, swapOpenOcean };
 }
