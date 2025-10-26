@@ -45,16 +45,10 @@ export default function ConnectButton() {
       </div>
     );
 
-  const connectPreferred = async () => {
-    const preferred =
-      connectors.find((c) => /phantom/i.test(c.name)) ??
-      connectors.find((c) => c.id === "injected") ??
-      connectors[0];
-    try {
-      if (preferred) await connect({ connector: preferred, chainId: base.id });
-    } catch (_e) {
-      setOpen(true);
-    }
+  const connectPreferred = () => {
+    // Always show modal so users can explicitly approve connection
+    // This provides better security and user consent
+    setOpen(true);
   };
 
   return (

@@ -100,15 +100,29 @@ export function ActivePoolsList({ onManage }: ActivePoolsListProps) {
   const [tokenPrices, setTokenPrices] = useState<Record<string, number | null>>({});
 
   // Get total number of pairs
-  const { data: pairsLength } = useReadContract({
+  const { data: pairsLength, isError, isLoading, error } = useReadContract({
     address: SILVERBACK_V2_FACTORY as Address,
     abi: factoryAbi,
     functionName: "allPairsLength",
   });
 
+  // Log contract read status for debugging Safari issues
+  useEffect(() => {
+    console.log('Factory contract read status:', {
+      pairsLength: pairsLength?.toString(),
+      isLoading,
+      isError,
+      error: error?.message,
+      factory: SILVERBACK_V2_FACTORY
+    });
+  }, [pairsLength, isLoading, isError, error]);
+
   // Fetch all pool data
   useEffect(() => {
-    if (!pairsLength || !publicClient) return;
+    if (!pairsLength || !publicClient) {
+      console.log('ActivePoolsList: Missing dependencies', { pairsLength, hasPublicClient: !!publicClient });
+      return;
+    }
 
     const fetchPools = async () => {
       setLoading(true);
@@ -116,6 +130,8 @@ export function ActivePoolsList({ onManage }: ActivePoolsListProps) {
 
       try {
         const length = Number(pairsLength);
+        console.log('ActivePoolsList: Fetching', length, 'pairs from factory:', SILVERBACK_V2_FACTORY);
+
         const factory = getContract({
           address: SILVERBACK_V2_FACTORY as Address,
           abi: factoryAbi,
@@ -213,6 +229,7 @@ export function ActivePoolsList({ onManage }: ActivePoolsListProps) {
           }
         }
 
+        console.log('ActivePoolsList: Successfully fetched', poolsData.length, 'pools');
         setPools(poolsData);
 
         // Fetch USD prices for all unique tokens (optional, won't break if it fails)
@@ -389,7 +406,13 @@ export function ActivePoolsList({ onManage }: ActivePoolsListProps) {
           </div>
         </div>
 
-        {loading ? (
+        {isError ? (
+          <div className="rounded-xl border border-red-500/60 bg-red-500/10 backdrop-blur p-8 text-center">
+            <p className="text-red-400 font-medium mb-2">Failed to load pools</p>
+            <p className="text-sm text-muted-foreground">{error?.message || 'Unknown error'}</p>
+            <p className="text-xs text-muted-foreground mt-2">Factory: {SILVERBACK_V2_FACTORY}</p>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center space-y-2">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand mx-auto"></div>
