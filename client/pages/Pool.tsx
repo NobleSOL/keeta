@@ -16,7 +16,8 @@ import { v2Addresses, v2Abi } from "@/amm/v2";
 import { v3Address, nfpmAbi } from "@/amm/v3";
 import { toast } from "@/hooks/use-toast";
 import { base } from "viem/chains";
-import { PoolStatistics } from "@/components/pool/PoolStatistics";
+import { ActivePoolsList } from "@/components/pool/ActivePoolsList";
+import type { PoolCardData } from "@/components/pool/ActivePoolCard";
 
 // WETH address on Base (Sepolia and Mainnet use same address)
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
@@ -48,6 +49,30 @@ const PAIR_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "address" }],
   },
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "totalSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
 ] as const;
 
 export default function Pool() {
@@ -63,6 +88,8 @@ export default function Pool() {
   const [reserves, setReserves] = useState<{ reserveA: bigint; reserveB: bigint } | null>(null);
   const [lastEditedField, setLastEditedField] = useState<"A" | "B">("A");
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [lpBalance, setLpBalance] = useState<bigint | null>(null);
+  const [lpTotalSupply, setLpTotalSupply] = useState<bigint | null>(null);
   const [slippage, setSlippage] = useState<number>(() => {
     const v =
       typeof window !== "undefined"
@@ -174,6 +201,35 @@ export default function Pool() {
           reserveA: isToken0 ? reserve0 : reserve1,
           reserveB: isToken0 ? reserve1 : reserve0,
         });
+
+        // Get LP token balance and total supply for remove liquidity
+        if (address) {
+          try {
+            const [lpBal, totalSupply] = await Promise.all([
+              publicClient.readContract({
+                address: pair as `0x${string}`,
+                abi: PAIR_ABI,
+                functionName: "balanceOf",
+                args: [address],
+              }) as Promise<bigint>,
+              publicClient.readContract({
+                address: pair as `0x${string}`,
+                abi: PAIR_ABI,
+                functionName: "totalSupply",
+              }) as Promise<bigint>,
+            ]);
+
+            if (!cancel) {
+              setLpBalance(lpBal);
+              setLpTotalSupply(totalSupply);
+            }
+          } catch (err) {
+            console.log("Error fetching LP balance:", err);
+          }
+        } else {
+          setLpBalance(null);
+          setLpTotalSupply(null);
+        }
       } catch (error) {
         console.log("Pair doesn't exist or error fetching reserves:", error);
       }
@@ -182,7 +238,7 @@ export default function Pool() {
     return () => {
       cancel = true;
     };
-  }, [tokenA, tokenB, publicClient, version, refetchTrigger]);
+  }, [tokenA, tokenB, publicClient, version, refetchTrigger, address]);
 
   // Fetch balances
   useEffect(() => {
@@ -551,6 +607,179 @@ export default function Pool() {
     }
   };
 
+  const handleRemoveLiquidity = async () => {
+    if (version === "v2") {
+      const addrs = v2Addresses();
+      if (!addrs || !publicClient || !address) {
+        toast({
+          title: "Configuration Error",
+          description: "Missing configuration or wallet not connected",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!pairAddress || !lpBalance || lpBalance === 0n) {
+        toast({
+          title: "No Position",
+          description: "You don't have any LP tokens for this pool",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use amtA as the percentage or LP token amount to remove
+      const lpToRemove = amtA ? parseUnits(amtA, 18) : 0n;
+      if (lpToRemove === 0n || lpToRemove > lpBalance) {
+        toast({
+          title: "Invalid Amount",
+          description: "Please enter a valid LP token amount to remove",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      try {
+        setIsWriting(true);
+
+        // Calculate minimum amounts with slippage
+        const slippageMultiplier = 1 - slippage / 100;
+
+        // Calculate expected token amounts based on LP share
+        const shareOfPool = Number(lpToRemove) / Number(lpTotalSupply || 1n);
+        const expectedA = BigInt(Math.floor(Number(reserves?.reserveA || 0n) * shareOfPool));
+        const expectedB = BigInt(Math.floor(Number(reserves?.reserveB || 0n) * shareOfPool));
+
+        const minA = BigInt(Math.floor(Number(expectedA) * slippageMultiplier));
+        const minB = BigInt(Math.floor(Number(expectedB) * slippageMultiplier));
+
+        // Deadline: 20 minutes from now
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
+
+        // Approve LP tokens to router
+        toast({
+          title: "Approval Required",
+          description: "Approving LP tokens...",
+        });
+
+        const approvalHash = await writeContractAsync({
+          address: pairAddress as `0x${string}`,
+          abi: PAIR_ABI,
+          functionName: "approve",
+          args: [addrs.router, lpToRemove],
+        });
+
+        await publicClient.waitForTransactionReceipt({ hash: approvalHash as `0x${string}` });
+
+        // Remove liquidity
+        toast({
+          title: "Removing Liquidity",
+          description: "Confirm the transaction in your wallet...",
+        });
+
+        const isEthA = tokenA.symbol.toUpperCase() === "ETH";
+        const isEthB = tokenB.symbol.toUpperCase() === "ETH";
+
+        let removeHash: string;
+
+        if (isEthA || isEthB) {
+          // One token is ETH - use removeLiquidityETH
+          const otherToken = isEthA ? tokenB : tokenA;
+          const otherAddr = isEthA
+            ? (tokenB.address === ETH_SENTINEL ? WETH_ADDRESS : tokenB.address)
+            : (tokenA.address === ETH_SENTINEL ? WETH_ADDRESS : tokenA.address);
+          const minToken = isEthA ? minB : minA;
+          const minETH = isEthA ? minA : minB;
+
+          removeHash = await writeContractAsync({
+            address: addrs.router,
+            abi: v2Abi.router,
+            functionName: "removeLiquidityETH",
+            args: [otherAddr as `0x${string}`, lpToRemove, minToken, minETH, address, deadline],
+          });
+        } else {
+          // Both tokens are ERC20 - use removeLiquidity
+          const addrA = tokenA.address === ETH_SENTINEL ? WETH_ADDRESS : tokenA.address;
+          const addrB = tokenB.address === ETH_SENTINEL ? WETH_ADDRESS : tokenB.address;
+
+          removeHash = await writeContractAsync({
+            address: addrs.router,
+            abi: v2Abi.router,
+            functionName: "removeLiquidity",
+            args: [addrA as `0x${string}`, addrB as `0x${string}`, lpToRemove, minA, minB, address, deadline],
+          });
+        }
+
+        const explorerUrl = `https://basescan.org/tx/${removeHash}`;
+        toast({
+          title: "Transaction Submitted",
+          description: (
+            <div className="flex flex-col gap-1">
+              <span>Waiting for confirmation...</span>
+              <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 underline text-xs">
+                View on Basescan
+              </a>
+            </div>
+          ),
+        });
+
+        await publicClient.waitForTransactionReceipt({ hash: removeHash as `0x${string}` });
+
+        // Refetch after successful removal
+        setRefetchTrigger((prev) => prev + 1);
+
+        toast({
+          title: "Success!",
+          description: (
+            <div className="flex flex-col gap-1">
+              <span>Liquidity removed successfully!</span>
+              <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 underline text-xs">
+                View on Basescan
+              </a>
+            </div>
+          ),
+        });
+
+        // Clear inputs
+        setAmtA("");
+        setAmtB("");
+      } catch (error: any) {
+        toast({
+          title: "Transaction Failed",
+          description: error?.shortMessage || error?.message || String(error),
+          variant: "destructive",
+        });
+      } finally {
+        setIsWriting(false);
+      }
+    } else {
+      toast({
+        title: "Not Implemented",
+        description: "V3 remove liquidity not yet implemented",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManagePool = (pool: PoolCardData) => {
+    // Populate the liquidity input card with the selected pool's tokens
+    setTokenA({
+      symbol: pool.tokenA.symbol,
+      address: pool.tokenA.address as `0x${string}`,
+      decimals: pool.tokenA.decimals,
+    });
+    setTokenB({
+      symbol: pool.tokenB.symbol,
+      address: pool.tokenB.address as `0x${string}`,
+      decimals: pool.tokenB.decimals,
+    });
+    // If user has a position, default to remove mode, otherwise add mode
+    setMode(pool.userLpBalance && pool.userLpBalance > 0n ? "remove" : "add");
+    setVersion("v2"); // Ensure we're on V2 when selecting from pool cards
+    // Scroll to the top to show the liquidity input card
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(100%_60%_at_0%_0%,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_60%),radial-gradient(80%_50%_at_100%_100%,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_50%)]">
       <div className="container py-10">
@@ -640,19 +869,6 @@ export default function Pool() {
           </div>
 
           <div className="space-y-3">
-            {reserves && pairAddress && mode === "add" && (
-              <div className="mb-3">
-                <PoolStatistics
-                  pairAddress={pairAddress}
-                  tokenASymbol={tokenA.symbol}
-                  tokenBSymbol={tokenB.symbol}
-                  reserveA={reserves.reserveA}
-                  reserveB={reserves.reserveB}
-                  tokenADecimals={tokenA.decimals ?? 18}
-                  tokenBDecimals={tokenB.decimals ?? 18}
-                />
-              </div>
-            )}
             <TokenInput
               label={mode === "add" ? "Token A" : "Remove A"}
               token={tokenA}
@@ -693,12 +909,7 @@ export default function Pool() {
             onClick={() => {
               if (!isConnected) return connectPreferred();
               if (mode === "add") handleAddLiquidity();
-              else {
-                toast({
-                  title: "Remove Liquidity",
-                  description: "Visit the Positions page to remove liquidity from your existing pools.",
-                });
-              }
+              else handleRemoveLiquidity();
             }}
           >
             {isWriting ? (
@@ -723,15 +934,25 @@ export default function Pool() {
             </p>
           )}
 
-          {isConnected && mode === "remove" && (
+          {isConnected && mode === "remove" && lpBalance && lpBalance > 0n && (
             <p className="mt-3 text-xs text-center text-muted-foreground">
-              To remove liquidity, visit the{" "}
-              <a href="/positions" className="text-sky-400 hover:underline">
-                Positions page
-              </a>
+              Your LP Balance: {Number(formatUnits(lpBalance, 18)).toFixed(6)} LP tokens
+            </p>
+          )}
+
+          {isConnected && mode === "remove" && (!lpBalance || lpBalance === 0n) && pairAddress && (
+            <p className="mt-3 text-xs text-center text-muted-foreground text-amber-400">
+              You don't have any LP tokens for this pool
             </p>
           )}
         </div>
+
+        {/* Active Pools Section - Only show for V2 */}
+        {version === "v2" && (
+          <div className="mt-10">
+            <ActivePoolsList onManage={handleManagePool} />
+          </div>
+        )}
       </div>
 
       {selecting && (

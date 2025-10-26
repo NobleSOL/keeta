@@ -15,6 +15,13 @@ export const TOKEN_META: Record<string, TokenMeta> = {
     address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", // Native ETH sentinel
     decimals: 18,
   },
+  WETH: {
+    symbol: "WETH",
+    name: "Wrapped Ether",
+    logo: "https://assets.coingecko.com/coins/images/279/standard/ethereum.png",
+    address: "0x4200000000000000000000000000000000000006", // WETH on Base
+    decimals: 18,
+  },
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
