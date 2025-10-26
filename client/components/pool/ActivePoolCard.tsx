@@ -1,5 +1,5 @@
 import { formatUnits } from "viem";
-import { TrendingUp, Droplet, ArrowRight } from "lucide-react";
+import { TrendingUp, Droplet, ArrowRight, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TokenLogo } from "@/components/shared/TokenLogo";
 
@@ -44,6 +44,14 @@ export function ActivePoolCard({ pool, onManage }: { pool: PoolCardData; onManag
     : 0;
   const userTokenB = hasPosition && pool.totalSupply > 0n
     ? Number(formatUnits((pool.reserveB * pool.userLpBalance!) / pool.totalSupply, pool.tokenB.decimals))
+    : 0;
+
+  // Estimated fee earnings (0.3% of trading volume goes to LPs)
+  // Simplified calculation: assume daily volume = 10% of TVL
+  const estimatedDailyVolume = reserveAFormatted * 0.1;
+  const totalDailyFees = estimatedDailyVolume * 0.003; // 0.3% fee
+  const userDailyFees = hasPosition && pool.userPoolShare
+    ? (totalDailyFees * pool.userPoolShare / 100)
     : 0;
 
   return (
@@ -95,18 +103,34 @@ export function ActivePoolCard({ pool, onManage }: { pool: PoolCardData; onManag
 
       {/* User Position */}
       {hasPosition && (
-        <div className="rounded-lg border border-brand/40 bg-brand/10 p-2 mb-3">
-          <div className="flex items-center gap-1 mb-1">
-            <Droplet className="h-3 w-3 text-sky-400" />
-            <span className="text-xs text-muted-foreground">Your Position</span>
+        <>
+          <div className="rounded-lg border border-brand/40 bg-brand/10 p-2 mb-2">
+            <div className="flex items-center gap-1 mb-1">
+              <Droplet className="h-3 w-3 text-sky-400" />
+              <span className="text-xs text-muted-foreground">Your Position</span>
+            </div>
+            <div className="text-xs font-semibold text-sky-400">
+              {pool.userPoolShare?.toFixed(4)}% of pool
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {userTokenA.toFixed(4)} {pool.tokenA.symbol} + {userTokenB.toFixed(4)} {pool.tokenB.symbol}
+            </div>
           </div>
-          <div className="text-xs font-semibold text-sky-400">
-            {pool.userPoolShare?.toFixed(4)}% of pool
+
+          {/* Fee Earnings Estimate */}
+          <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-2 mb-3">
+            <div className="flex items-center gap-1 mb-1">
+              <Coins className="h-3 w-3 text-green-400" />
+              <span className="text-xs text-muted-foreground">Est. Fee Earnings</span>
+            </div>
+            <div className="text-xs font-semibold text-green-400">
+              ~{userDailyFees.toFixed(6)} {pool.tokenA.symbol}/day
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              LP tokens auto-compound fees from 0.3% of all trades
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {userTokenA.toFixed(4)} {pool.tokenA.symbol} + {userTokenB.toFixed(4)} {pool.tokenB.symbol}
-          </div>
-        </div>
+        </>
       )}
 
       {/* Exchange Rate */}
