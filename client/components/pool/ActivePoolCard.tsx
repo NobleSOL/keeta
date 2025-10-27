@@ -31,10 +31,11 @@ export function ActivePoolCard({ pool, onManage }: { pool: PoolCardData; onManag
   // Calculate TVL (simple display without USD pricing)
   const tvl = `${reserveAFormatted.toFixed(2)} ${pool.tokenA.symbol} + ${reserveBFormatted.toFixed(2)} ${pool.tokenB.symbol}`;
 
-  // Estimate APY (simplified - would need historical volume data for accuracy)
-  const estimatedDailyFee = reserveAFormatted * 0.003;
+  // Estimate APY (simplified - assumes daily volume is ~10% of TVL)
+  // APY = (daily volume * fee rate * 365 days) / TVL * 100
+  const assumedDailyVolumePercent = 0.1; // Assume 10% of TVL trades daily
   const estimatedAPY = reserveAFormatted > 0
-    ? ((estimatedDailyFee / reserveAFormatted) * 365 * 100).toFixed(2)
+    ? ((assumedDailyVolumePercent * 0.003 * 365) * 100).toFixed(2)
     : "0.00";
 
   // User's position
@@ -74,6 +75,14 @@ export function ActivePoolCard({ pool, onManage }: { pool: PoolCardData; onManag
             <div className="text-xs text-muted-foreground">
               AMM Pool
             </div>
+            <a
+              href={`https://basescan.org/address/${pool.pairAddress}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-sky-400 hover:text-sky-300 transition-colors"
+            >
+              {pool.pairAddress.slice(0, 6)}...{pool.pairAddress.slice(-4)}
+            </a>
           </div>
         </div>
 

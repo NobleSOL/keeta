@@ -287,10 +287,9 @@ export function ActivePoolsList({ onManage }: ActivePoolsListProps) {
         hasUSDPrices = true;
       }
 
-      // Calculate APY for this pool
-      const estimatedDailyFee = reserveA * 0.003;
-      const apy =
-        reserveA > 0 ? (estimatedDailyFee / reserveA) * 365 * 100 : 0;
+      // Calculate APY for this pool (assumes 10% of TVL trades daily)
+      const assumedDailyVolumePercent = 0.1;
+      const apy = (assumedDailyVolumePercent * 0.003 * 365) * 100;
       totalAPY += apy;
     });
 
@@ -325,11 +324,10 @@ export function ActivePoolsList({ onManage }: ActivePoolsListProps) {
       const bReserve = Number(formatUnits(b.reserveA, b.tokenA.decimals));
       return bReserve - aReserve;
     } else if (sortBy === "apy") {
+      // Since all pools now have the same APY estimate (10.95%), sort by TVL instead
       const aReserve = Number(formatUnits(a.reserveA, a.tokenA.decimals));
       const bReserve = Number(formatUnits(b.reserveA, b.tokenA.decimals));
-      const aAPY = aReserve > 0 ? ((aReserve * 0.003) / aReserve) * 365 * 100 : 0;
-      const bAPY = bReserve > 0 ? ((bReserve * 0.003) / bReserve) * 365 * 100 : 0;
-      return bAPY - aAPY;
+      return bReserve - aReserve;
     } else if (sortBy === "share") {
       const aShare = a.userPoolShare ?? 0;
       const bShare = b.userPoolShare ?? 0;
