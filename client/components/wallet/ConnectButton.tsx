@@ -46,9 +46,11 @@ export default function ConnectButton() {
     );
 
   const connectPreferred = () => {
-    // Always show modal so users can explicitly approve connection
-    // This provides better security and user consent
-    setOpen(true);
+    // Auto-connect with preferred wallet (MetaMask/injected first, then fallback)
+    const preferred = connectors.find((c) => c.id === "injected") ?? connectors[0];
+    if (preferred) {
+      connect({ connector: preferred, chainId: base.id });
+    }
   };
 
   return (

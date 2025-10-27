@@ -121,7 +121,7 @@ export default function Pool() {
   const connectPreferred = () => {
     const preferred =
       connectors.find((c) => c.id === "injected") ?? connectors[0];
-    if (preferred) connect({ connector: preferred });
+    if (preferred) connect({ connector: preferred, chainId: base.id });
   };
 
   const canSubmit = useMemo(() => {
