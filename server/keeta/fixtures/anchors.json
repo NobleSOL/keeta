@@ -1,0 +1,42 @@
+{
+  "anchors": [
+    {
+      "anchorId": "anchor_btc_usd",
+      "tokens": ["BTC", "USD"],
+      "feeBps": 50,
+      "quotes": {
+        "BTC": {
+          "USD": {
+            "numerator": "99500000",
+            "denominator": "100000000"
+          }
+        },
+        "USD": {
+          "BTC": {
+            "numerator": "100000000",
+            "denominator": "99500000"
+          }
+        }
+      }
+    },
+    {
+      "anchorId": "anchor_kta_usdc",
+      "tokens": ["KTA", "USDC"],
+      "feeBps": 3,
+      "quotes": {
+        "KTA": {
+          "USDC": {
+            "numerator": "0",
+            "denominator": "1"
+          }
+        },
+        "USDC": {
+          "KTA": {
+            "numerator": "0",
+            "denominator": "1"
+          }
+        }
+      }
+    }
+  ]
+}
