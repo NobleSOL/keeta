@@ -20,6 +20,8 @@ router.post('/quote', async (req, res) => {
   try {
     const { tokenIn, tokenOut, amountIn } = req.body;
 
+    console.log('📊 Swap quote request:', { tokenIn: tokenIn?.slice(0, 20) + '...', tokenOut: tokenOut?.slice(0, 20) + '...', amountIn, amountInType: typeof amountIn });
+
     if (!tokenIn || !tokenOut || !amountIn) {
       return res.status(400).json({
         error: 'Missing required fields: tokenIn, tokenOut, amountIn',
@@ -31,6 +33,8 @@ router.post('/quote', async (req, res) => {
     // Get decimals for input token
     const decimals = await fetchTokenDecimals(tokenIn);
     const amountInAtomic = toAtomic(Number(amountIn), decimals);
+
+    console.log('💱 Converting amount:', { amountIn, decimals, amountInAtomic: amountInAtomic.toString() });
 
     // Get quote
     const quote = await poolManager.getSwapQuote(tokenIn, tokenOut, amountInAtomic);
@@ -63,8 +67,11 @@ router.post('/quote', async (req, res) => {
  */
 router.post('/execute', async (req, res) => {
   try {
+    console.log('🔄 Swap execute request body:', JSON.stringify(req.body, null, 2));
+
     const {
       userAddress,
+      userSeed,
       tokenIn,
       tokenOut,
       amountIn,
@@ -72,9 +79,18 @@ router.post('/execute', async (req, res) => {
       slippagePercent = 0.5,
     } = req.body;
 
-    if (!userAddress || !tokenIn || !tokenOut || !amountIn) {
+    console.log('📝 Extracted fields:', {
+      hasUserAddress: !!userAddress,
+      hasUserSeed: !!userSeed,
+      hasTokenIn: !!tokenIn,
+      hasTokenOut: !!tokenOut,
+      hasAmountIn: !!amountIn
+    });
+
+    if (!userAddress || !tokenIn || !tokenOut || !amountIn || !userSeed) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({
-        error: 'Missing required fields: userAddress, tokenIn, tokenOut, amountIn',
+        error: 'Missing required fields: userAddress, userSeed, tokenIn, tokenOut, amountIn',
       });
     }
 
@@ -90,8 +106,13 @@ router.post('/execute', async (req, res) => {
       minAmountOutAtomic = toAtomic(Number(minAmountOut), decimalsOut);
     }
 
+    // Create user client
+    const { createUserClient } = await import('../utils/client.js');
+    const { client: userClient } = createUserClient(userSeed);
+
     // Execute swap
     const result = await poolManager.swap(
+      userClient,
       userAddress,
       tokenIn,
       tokenOut,

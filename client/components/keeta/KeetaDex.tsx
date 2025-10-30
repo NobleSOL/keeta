@@ -216,6 +216,10 @@ export default function KeetaDex() {
       console.log('🔍 Frontend: Sending seed to backend:', seed);
       console.log('🔍 Frontend: Account index:', accountIndex);
 
+      // Clear old positions data before importing new wallet
+      setPositions([]);
+      setPools([]);
+
       const res = await fetch(`${API_BASE}/wallet`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -374,6 +378,7 @@ export default function KeetaDex() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userAddress: wallet.address,
+          userSeed: wallet.seed,
           tokenIn: swapTokenIn,
           tokenOut: tokenOut,
           amountIn: swapAmount,
@@ -463,6 +468,7 @@ export default function KeetaDex() {
         body: JSON.stringify({
           tokenA: newPoolTokenA,
           tokenB: newPoolTokenB,
+          userSeed: wallet.seed,
         }),
       });
       const createData = await createRes.json();
@@ -904,15 +910,15 @@ export default function KeetaDex() {
 
           {/* Right Column - Tabs */}
           <div className="lg:col-span-7">
-            <Tabs defaultValue="pools" className="w-full">
+            <Tabs defaultValue="swap" className="w-full">
               <TabsList className="grid w-full grid-cols-4 mb-6 bg-card/60 border border-border/40">
-                <TabsTrigger value="pools">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Active Pools
-                </TabsTrigger>
                 <TabsTrigger value="swap">
                   <ArrowRightLeft className="mr-2 h-4 w-4" />
                   Swap
+                </TabsTrigger>
+                <TabsTrigger value="pools">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Active Pools
                 </TabsTrigger>
                 <TabsTrigger value="liquidity">
                   <Plus className="mr-2 h-4 w-4" />
