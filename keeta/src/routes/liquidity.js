@@ -57,7 +57,7 @@ router.post('/add', async (req, res) => {
     const existingPool = poolManager.getPool(tokenA, tokenB);
     if (!existingPool) {
       console.log(`🏗️ Pool doesn't exist, creating new pool for ${tokenA} / ${tokenB}...`);
-      await poolManager.createPool(tokenA, tokenB);
+      await poolManager.createPool(tokenA, tokenB, userAddress);
     }
 
     // Add liquidity using user's client

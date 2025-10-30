@@ -20,6 +20,38 @@ export async function getOpsClient() {
 }
 
 /**
+ * Validate a hex seed string
+ * @param {string} seedHex - Seed to validate
+ * @returns {boolean}
+ */
+function validateHexSeed(seedHex) {
+  if (!seedHex || typeof seedHex !== 'string') return false;
+  const trimmed = seedHex.trim();
+  return /^[0-9A-Fa-f]{64}$/.test(trimmed);
+}
+
+/**
+ * Create a UserClient from a user's seed (for permissionless operations)
+ * @param {string} seedHex - User's seed as hex string
+ * @param {number} accountIndex - Account index (default 0)
+ * @returns {Object} { client: UserClient, account: Account, address: string }
+ */
+export function createUserClient(seedHex, accountIndex = 0) {
+  if (!validateHexSeed(seedHex)) {
+    throw new Error('Invalid seed: must be 64 hex characters');
+  }
+
+  const seed = Buffer.from(seedHex.trim(), 'hex');
+  const account = KeetaNet.lib.Account.fromSeed(seed, accountIndex);
+  const client = KeetaNet.UserClient.fromNetwork(CONFIG.NETWORK, account);
+  const address = account.publicKeyString.get();
+
+  console.log(`✅ User client created: ${address}`);
+
+  return { client, account, address };
+}
+
+/**
  * Get the treasury account (for fee collection)
  */
 export function getTreasuryAccount() {
@@ -43,33 +75,70 @@ export function getOpsAccount() {
 }
 
 /**
- * Fetch token decimals from on-chain metadata
+ * Fetch token metadata from on-chain (symbol/ticker and decimals)
+ * @param {string} tokenAddress - Token address
+ * @returns {Promise<{symbol: string, decimals: number}>}
  */
-export async function fetchTokenDecimals(tokenAddress) {
-  // Check cache first
-  const cached = getCachedDecimals(tokenAddress);
-  if (cached !== undefined) return cached;
+export async function fetchTokenMetadata(tokenAddress) {
+  // Check decimals cache first
+  const cachedDecimals = getCachedDecimals(tokenAddress);
 
   try {
     const client = await getOpsClient();
-    const tokenAccount = KeetaNet.lib.Account.fromPublicKeyString(tokenAddress);
-    const info = await client.getAccountInfo(tokenAccount);
-    
-    if (info?.info?.metadata) {
-      const metaObj = JSON.parse(
-        Buffer.from(info.info.metadata, 'base64').toString()
-      );
-      const decimals = Number(metaObj.decimalPlaces || 9);
+
+    // Use getAccountsInfo (plural) which takes an array of accounts
+    const accountsInfo = await client.client.getAccountsInfo([tokenAddress]);
+    const info = accountsInfo[tokenAddress];
+
+    if (info?.info) {
+      // Get symbol from info.name (this is where Keeta stores the token symbol)
+      const symbol = info.info.name || tokenAddress.slice(0, 8) + '...';
+
+      // Get decimals from metadata object
+      let decimals = 9; // Default
+      if (info.info.metadata) {
+        try {
+          const metaObj = JSON.parse(
+            Buffer.from(info.info.metadata, 'base64').toString()
+          );
+          decimals = Number(metaObj.decimalPlaces || metaObj.decimals || 9);
+        } catch (parseErr) {
+          console.warn(`⚠️ Could not parse metadata for ${tokenAddress.slice(0, 12)}...`);
+        }
+      }
+
+      // Cache decimals
       cacheDecimals(tokenAddress, decimals);
-      return decimals;
+
+      console.log(`✅ Fetched metadata for ${symbol}: ${decimals} decimals`);
+      return { symbol, decimals };
     }
   } catch (err) {
-    console.warn(`⚠️ Could not fetch decimals for ${tokenAddress}:`, err.message);
+    // Log error for debugging
+    console.warn(`⚠️ Could not fetch metadata for ${tokenAddress.slice(0, 12)}...: ${err.message}`);
+    // Silently use cached/default values - this is expected for some tokens
+    if (cachedDecimals === undefined) {
+      console.log(`ℹ️ Using default metadata for ${tokenAddress.slice(0, 12)}...`);
+    }
   }
-  
-  // Default to 9 (KTA standard)
-  cacheDecimals(tokenAddress, 9);
-  return 9;
+
+  // Default values if metadata not found
+  const decimals = cachedDecimals !== undefined ? cachedDecimals : 9;
+  const symbol = tokenAddress.slice(0, 8) + '...';
+
+  if (cachedDecimals === undefined) {
+    cacheDecimals(tokenAddress, decimals);
+  }
+
+  return { symbol, decimals };
+}
+
+/**
+ * Fetch token decimals from on-chain metadata
+ */
+export async function fetchTokenDecimals(tokenAddress) {
+  const metadata = await fetchTokenMetadata(tokenAddress);
+  return metadata.decimals;
 }
 
 /**
@@ -105,6 +174,111 @@ export async function getTokenBalance(accountAddress, tokenAddress) {
 /**
  * Create a new storage account for a pool
  */
+/**
+ * Create an LP storage account with dual ownership
+ * User owns the account (can withdraw directly)
+ * Ops has SEND_ON_BEHALF (can route swaps)
+ *
+ * @param {string} userAddress - User's address who will own this LP account
+ * @param {string} poolIdentifier - Pool identifier (e.g., "KTA_RIDE")
+ * @returns {Promise<string>} LP storage account address
+ */
+export async function createLPStorageAccount(userAddress, poolIdentifier) {
+  const client = await getOpsClient();
+  const ops = getOpsAccount();
+
+  const builder = client.initBuilder();
+
+  // Generate new storage account for this LP position
+  const pending = builder.generateIdentifier(
+    KeetaNet.lib.Account.AccountKeyAlgorithm.STORAGE
+  );
+  await builder.computeBlocks();
+
+  const storageAccount = pending.account;
+  const storageAddress = storageAccount.publicKeyString.toString();
+
+  // Set storage info
+  // Name must be uppercase only, no lowercase letters or numbers
+  const poolShort = poolIdentifier.slice(-8).toUpperCase().replace(/[^A-Z]/g, '');
+  const userShort = userAddress.slice(-8).toUpperCase().replace(/[^A-Z]/g, '');
+
+  // Metadata must be base64 encoded
+  const metadataObj = {
+    pool: poolIdentifier,
+    owner: userAddress,
+    createdAt: Date.now()
+  };
+  const metadataBase64 = Buffer.from(JSON.stringify(metadataObj)).toString('base64');
+
+  builder.setInfo(
+    {
+      name: `LP_${poolShort}_${userShort}`,
+      description: `Liquidity position for ${poolIdentifier} owned by ${userAddress.slice(0, 20)}...`,
+      metadata: metadataBase64,
+      defaultPermission: new KeetaNet.lib.Permissions([
+        'ACCESS',
+        'STORAGE_CAN_HOLD',
+      ]),
+    },
+    { account: storageAccount }
+  );
+
+  const userAccount = accountFromAddress(userAddress);
+  const opsAddress = ops.publicKeyString.get();
+
+  // Check if user and ops are the same account
+  if (userAddress === opsAddress) {
+    // Same account: grant all permissions once
+    builder.updatePermissions(
+      ops,
+      new KeetaNet.lib.Permissions([
+        'OWNER',
+        'STORAGE_DEPOSIT',
+        'SEND_ON_BEHALF',
+      ]),
+      undefined,
+      undefined,
+      { account: storageAccount }
+    );
+  } else {
+    // Different accounts: grant permissions separately
+    // Grant OWNER to user (they control their funds)
+    builder.updatePermissions(
+      userAccount,
+      new KeetaNet.lib.Permissions([
+        'OWNER',
+        'STORAGE_DEPOSIT',
+        'SEND_ON_BEHALF', // User can withdraw their own funds
+      ]),
+      undefined,
+      undefined,
+      { account: storageAccount }
+    );
+
+    // Grant SEND_ON_BEHALF to ops (for routing swaps)
+    builder.updatePermissions(
+      ops,
+      new KeetaNet.lib.Permissions([
+        'SEND_ON_BEHALF',
+        'STORAGE_DEPOSIT',
+      ]),
+      undefined,
+      undefined,
+      { account: storageAccount }
+    );
+  }
+
+  // Publish the transaction
+  await client.publishBuilder(builder);
+
+  console.log(`✅ LP storage account created: ${storageAddress}`);
+  console.log(`   Owner: ${userAddress}`);
+  console.log(`   Router: ${ops.publicKeyString.get()}`);
+
+  return storageAddress;
+}
+
 export async function createStorageAccount(name, description) {
   const client = await getOpsClient();
   const ops = getOpsAccount();
@@ -169,7 +343,7 @@ export async function createStorageAccount(name, description) {
       { account: storageAccount }
     );
 
-    // Grant permissions to ops account
+    // Grant permissions to ops account only
     builder.updatePermissions(
       ops,
       new KeetaNet.lib.Permissions([
@@ -182,17 +356,7 @@ export async function createStorageAccount(name, description) {
       { account: storageAccount }
     );
 
-    // Grant permissions to treasury for fee collection
-    builder.updatePermissions(
-      treasury,
-      new KeetaNet.lib.Permissions([
-        'ACCESS',
-        'STORAGE_CAN_HOLD',
-      ]),
-      undefined,
-      undefined,
-      { account: storageAccount }
-    );
+    // Note: Treasury permissions can be added later when implementing fee collection
   }
   
   await client.publishBuilder(builder);
@@ -200,65 +364,8 @@ export async function createStorageAccount(name, description) {
   return marketId;
 }
 
-/**
- * Create a new token account (for LP tokens)
- */
-export async function createTokenAccount(symbol, name, decimals = 9, initialSupply = 0n) {
-  const client = await getOpsClient();
-  const ops = getOpsAccount();
-
-  const builder = client.initBuilder();
-
-  // Generate new token account
-  const pending = builder.generateIdentifier(
-    KeetaNet.lib.Account.AccountKeyAlgorithm.STORAGE
-  );
-  await builder.computeBlocks();
-
-  const tokenAccount = pending.account;
-  const tokenAddress = tokenAccount.publicKeyString.toString();
-
-  // Create token metadata
-  const metadata = {
-    name,
-    symbol,
-    decimalPlaces: decimals,
-    description: name,
-  };
-
-  // Set token info with metadata
-  builder.setInfo(
-    {
-      name: symbol,
-      description: name,
-      metadata: Buffer.from(JSON.stringify(metadata)).toString('base64'),
-      defaultPermission: new KeetaNet.lib.Permissions([
-        'ACCESS',
-        'STORAGE_CAN_HOLD',
-        'STORAGE_DEPOSIT',
-      ]),
-    },
-    { account: tokenAccount }
-  );
-
-  // Grant OWNER permissions to ops account
-  builder.updatePermissions(
-    ops,
-    new KeetaNet.lib.Permissions([
-      'OWNER',
-      'SEND_ON_BEHALF',
-    ]),
-    undefined,
-    undefined,
-    { account: tokenAccount }
-  );
-
-  await client.publishBuilder(builder);
-
-  console.log(`✅ Token created: ${symbol} at ${tokenAddress}`);
-
-  return tokenAddress;
-}
+// LP token functions removed - see legacy-lp-tokens/ folder
+// Keeta pools use STORAGE accounts, not separate TOKEN accounts for LP tokens
 
 /**
  * Helper to create Account objects from addresses

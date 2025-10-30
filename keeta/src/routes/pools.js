@@ -13,17 +13,11 @@ router.get('/', async (req, res) => {
     const poolManager = await getPoolManager();
     const allPools = await poolManager.getAllPoolsInfo();
 
-    // Filter out pools with 0 reserves (empty/removed pools)
-    const activePools = allPools.filter(pool => {
-      const reserveA = BigInt(pool.reserveA);
-      const reserveB = BigInt(pool.reserveB);
-      return reserveA > 0n && reserveB > 0n;
-    });
-
+    // Return all pools (including empty ones so users can add liquidity)
     res.json({
       success: true,
-      pools: activePools,
-      count: activePools.length,
+      pools: allPools,
+      count: allPools.length,
     });
   } catch (error) {
     console.error('Get pools error:', error);
@@ -70,19 +64,34 @@ router.get('/:tokenA/:tokenB', async (req, res) => {
 /**
  * POST /api/pools/create
  * Create a new pool (permissionless)
- * 
+ *
  * Body: {
  *   tokenA: string,
- *   tokenB: string
+ *   tokenB: string,
+ *   userSeed?: string (64-char hex seed) OR creatorAddress?: string
  * }
  */
 router.post('/create', async (req, res) => {
   try {
-    const { tokenA, tokenB } = req.body;
+    const { tokenA, tokenB, creatorAddress, userSeed } = req.body;
 
     if (!tokenA || !tokenB) {
       return res.status(400).json({
         error: 'Missing required fields: tokenA, tokenB',
+      });
+    }
+
+    // Derive creator address from userSeed if provided, otherwise use creatorAddress
+    let finalCreatorAddress = creatorAddress;
+    if (userSeed && !finalCreatorAddress) {
+      const { createUserClient } = await import('../utils/client.js');
+      const { address } = createUserClient(userSeed);
+      finalCreatorAddress = address;
+    }
+
+    if (!finalCreatorAddress) {
+      return res.status(400).json({
+        error: 'Missing required field: creatorAddress or userSeed',
       });
     }
 
@@ -102,8 +111,8 @@ router.post('/create', async (req, res) => {
       });
     }
 
-    // Create pool
-    const pool = await poolManager.createPool(tokenA, tokenB);
+    // Create pool with creator address for ownership transfer
+    const pool = await poolManager.createPool(tokenA, tokenB, finalCreatorAddress);
     const info = await pool.getPoolInfo();
 
     res.json({

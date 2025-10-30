@@ -149,13 +149,14 @@ export class Pool {
   /**
    * Execute a swap
    *
+   * @param {Object} userClient - User's KeetaNet client (from createUserClient)
    * @param {string} userAddress - User's account address
    * @param {string} tokenIn - Input token address
    * @param {bigint} amountIn - Amount of input token (atomic)
    * @param {bigint} minAmountOut - Minimum acceptable output amount (slippage protection)
    * @returns {Promise<{ amountOut: bigint, feeAmount: bigint, priceImpact: number }>}
    */
-  async swap(userAddress, tokenIn, amountIn, minAmountOut = 0n) {
+  async swap(userClient, userAddress, tokenIn, amountIn, minAmountOut = 0n) {
     await this.updateReserves();
     await this.loadLiquidityPositions();
 
@@ -180,11 +181,9 @@ export class Pool {
       );
     }
 
-    // Build transaction
-    const client = await getOpsClient();
-    const ops = getOpsAccount();
+    // Build transaction using user's client so they can send their tokens
     const treasury = getTreasuryAccount();
-    const builder = client.initBuilder();
+    const builder = userClient.initBuilder();
 
     const tokenInAccount = accountFromAddress(tokenIn);
     const tokenOutAccount = accountFromAddress(tokenOut);
@@ -207,54 +206,22 @@ export class Pool {
       console.log(`   ✅ Step 1: User sends ${feeAmount} fee to treasury`);
     }
 
-    // 2. Route swap across multiple LP storage accounts (pro-rata distribution)
-    // User sends input token DIRECTLY to each LP storage
-    // OPS pulls output token from LP storage on behalf of LP (using SEND_ON_BEHALF)
-    let totalAmountOutPulled = 0n;
-    console.log(`   📊 Routing across ${this.lpAccounts.size} LP account(s)...`);
+    // 2. Route swap directly through the pool account (pooled liquidity)
+    // User sends input token DIRECTLY to pool account
+    // OPS uses SEND_ON_BEHALF to pull output token from pool and send to user
+    console.log(`   📊 Routing through pooled liquidity...`);
 
-    for (const [lpAddress, lpAccount] of this.lpAccounts.entries()) {
-      // Calculate LP's share of the pool
-      const lpShareRatio = Number(lpAccount.shares) / Number(this.totalShares);
+    const poolAccount = accountFromAddress(this.poolAddress);
 
-      // Amount of output token to pull from this LP (pro-rata)
-      let amountOutFromLP = BigInt(Math.floor(Number(amountOut) * lpShareRatio));
+    // User sends input token DIRECTLY to pool (no intermediary)
+    builder.send(poolAccount, amountInAfterFee, tokenInAccount);
 
-      // Amount of input token to deposit to this LP (pro-rata)
-      const amountInToLP = BigInt(Math.floor(Number(amountInAfterFee) * lpShareRatio));
+    // OPS uses SEND_ON_BEHALF to pull output token from pool and send to user
+    builder.send(userAccount, amountOut, tokenOutAccount, undefined, {
+      account: poolAccount,
+    });
 
-      // Check if LP has enough of the output token (safety check)
-      const lpAvailableOut = isAtoB ? lpAccount.amountB : lpAccount.amountA;
-      if (amountOutFromLP > lpAvailableOut) {
-        console.warn(`⚠️  LP ${lpAddress.slice(0, 12)}... has insufficient ${isAtoB ? 'tokenB' : 'tokenA'}`);
-        console.warn(`   Requested: ${amountOutFromLP}, Available: ${lpAvailableOut}`);
-        console.warn(`   Using available amount instead`);
-        amountOutFromLP = lpAvailableOut;
-      }
-
-      if (amountOutFromLP > 0n) {
-        const lpStorageAccount = accountFromAddress(lpAccount.lpStorageAddress);
-
-        // User sends input token DIRECTLY to LP storage (no intermediary)
-        builder.send(lpStorageAccount, amountInToLP, tokenInAccount);
-
-        // OPS uses SEND_ON_BEHALF to pull output token from LP storage and send to user
-        builder.send(userAccount, amountOutFromLP, tokenOutAccount, undefined, {
-          account: lpStorageAccount,
-        });
-
-        totalAmountOutPulled += amountOutFromLP;
-
-        // Update LP position tracking
-        if (isAtoB) {
-          lpAccount.amountB -= amountOutFromLP;
-          lpAccount.amountA += amountInToLP;
-        } else {
-          lpAccount.amountA -= amountOutFromLP;
-          lpAccount.amountB += amountInToLP;
-        }
-      }
-    }
+    const totalAmountOutPulled = amountOut;
 
     // Handle rounding dust: if we didn't pull enough due to rounding, pull from first LP
     if (totalAmountOutPulled < amountOut) {
@@ -287,7 +254,7 @@ export class Pool {
     await this.saveLiquidityPositions();
 
     // Execute transaction and get block hashes
-    const txResult = await client.publishBuilder(builder);
+    const txResult = await userClient.publishBuilder(builder);
 
     // Extract block hash from the second block (index 1)
     // The first block is the receive, the second block is the send/swap
@@ -431,26 +398,19 @@ export class Pool {
     await this.updateReserves();
     await this.loadLiquidityPositions();
 
-    // Check if user has LP storage account, create if not
+    // Get existing position or create new one (no LP storage account needed)
     let existingLP = this.lpAccounts.get(userAddress);
-    let lpStorageAddress;
 
     if (!existingLP) {
-      console.log(`🏗️ Creating LP storage account for ${userAddress.slice(0, 20)}...`);
-      const poolId = `${this.tokenA.slice(-4)}_${this.tokenB.slice(-4)}`;
-      lpStorageAddress = await createLPStorageAccount(userAddress, poolId);
-
+      console.log(`💧 Creating new liquidity position for ${userAddress.slice(0, 20)}...`);
       existingLP = {
-        lpStorageAddress,
+        lpStorageAddress: null, // Not used in pooled liquidity
         shares: 0n,
         amountA: 0n,
         amountB: 0n,
       };
-
-      console.log(`✅ LP storage created: ${lpStorageAddress}`);
     } else {
-      lpStorageAddress = existingLP.lpStorageAddress;
-      console.log(`📂 Using existing LP storage: ${lpStorageAddress}`);
+      console.log(`📊 Adding to existing position for ${userAddress.slice(0, 20)}...`);
     }
 
     // Calculate optimal amounts
@@ -485,20 +445,20 @@ export class Pool {
     // Build transaction using user's client
     const builder = userClient.initBuilder();
 
-    const lpStorageAccount = accountFromAddress(lpStorageAddress);
+    const poolAccount = accountFromAddress(this.poolAddress);
     const tokenAAccount = accountFromAddress(this.tokenA);
     const tokenBAccount = accountFromAddress(this.tokenB);
 
-    // User sends both tokens to THEIR LP storage account
-    builder.send(lpStorageAccount, amountA, tokenAAccount);
-    builder.send(lpStorageAccount, amountB, tokenBAccount);
+    // User sends both tokens to the POOL account (pooled liquidity)
+    builder.send(poolAccount, amountA, tokenAAccount);
+    builder.send(poolAccount, amountB, tokenBAccount);
 
     // Execute transaction
     await userClient.publishBuilder(builder);
 
-    // Update LP account tracking
+    // Update position tracking
     this.lpAccounts.set(userAddress, {
-      lpStorageAddress,
+      lpStorageAddress: null, // Not used in pooled liquidity
       shares: existingLP.shares + shares,
       amountA: existingLP.amountA + amountA,
       amountB: existingLP.amountB + amountB,
@@ -510,13 +470,13 @@ export class Pool {
     await this.updateReserves();
 
     console.log(`✅ Added liquidity: ${amountA} tokenA + ${amountB} tokenB → ${shares} shares`);
-    console.log(`   LP Storage: ${lpStorageAddress}`);
+    console.log(`   Pool: ${this.poolAddress}`);
 
     return {
       amountA,
       amountB,
       liquidity: shares,
-      lpStorageAddress, // Return LP storage address for frontend
+      poolAddress: this.poolAddress, // Return pool address instead of LP storage
       newReserveA: this.reserveA,
       newReserveB: this.reserveB,
     };
@@ -563,44 +523,30 @@ export class Pool {
       throw new Error(`Insufficient token B: got ${amountB}, need ${amountBMin}`);
     }
 
-    // Check if LP storage has enough tokens (use tracked amounts as upper bound)
-    if (amountA > position.amountA) {
-      console.warn(`⚠️  Calculated amountA (${amountA}) exceeds tracked position (${position.amountA})`);
-      console.warn(`   Using tracked amount instead to prevent negative balance`);
-    }
-    if (amountB > position.amountB) {
-      console.warn(`⚠️  Calculated amountB (${amountB}) exceeds tracked position (${position.amountB})`);
-      console.warn(`   Using tracked amount instead to prevent negative balance`);
-    }
-
-    // Use the minimum of calculated and tracked amounts to prevent negative balances
-    const safeAmountA = amountA > position.amountA ? position.amountA : amountA;
-    const safeAmountB = amountB > position.amountB ? position.amountB : amountB;
-
     // Build transaction with ops client (using SEND_ON_BEHALF)
     const client = await getOpsClient();
     const builder = client.initBuilder();
 
-    const lpStorageAccount = accountFromAddress(position.lpStorageAddress);
+    const poolAccount = accountFromAddress(this.poolAddress);
     const tokenAAccount = accountFromAddress(this.tokenA);
     const tokenBAccount = accountFromAddress(this.tokenB);
     const userAccount = accountFromAddress(userAddress);
 
-    // Ops uses SEND_ON_BEHALF to send tokens from user's LP storage to user
-    builder.send(userAccount, safeAmountA, tokenAAccount, undefined, {
-      account: lpStorageAccount,
+    // Ops uses SEND_ON_BEHALF to send tokens from pool account to user
+    builder.send(userAccount, amountA, tokenAAccount, undefined, {
+      account: poolAccount,
     });
-    builder.send(userAccount, safeAmountB, tokenBAccount, undefined, {
-      account: lpStorageAccount,
+    builder.send(userAccount, amountB, tokenBAccount, undefined, {
+      account: poolAccount,
     });
 
     // Execute transaction
     await client.publishBuilder(builder);
 
-    // Update position tracking (use safe amounts that were actually sent)
+    // Update position tracking
     position.shares -= liquidity;
-    position.amountA -= safeAmountA;
-    position.amountB -= safeAmountB;
+    position.amountA -= amountA;
+    position.amountB -= amountB;
 
     if (position.shares === 0n) {
       this.lpAccounts.delete(userAddress);
@@ -613,12 +559,12 @@ export class Pool {
     await this.saveLiquidityPositions();
     await this.updateReserves();
 
-    console.log(`✅ Removed liquidity: ${liquidity} shares → ${safeAmountA} tokenA + ${safeAmountB} tokenB`);
-    console.log(`   From LP storage: ${position.lpStorageAddress}`);
+    console.log(`✅ Removed liquidity: ${liquidity} shares → ${amountA} tokenA + ${amountB} tokenB`);
+    console.log(`   From pool: ${this.poolAddress}`);
 
     return {
-      amountA: safeAmountA,
-      amountB: safeAmountB,
+      amountA,
+      amountB,
       newReserveA: this.reserveA,
       newReserveB: this.reserveB,
     };
